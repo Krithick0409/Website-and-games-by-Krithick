@@ -1,0 +1,89 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Exam Slayer V2</title>
+<style>
+body{margin:0;background:#0f172a;color:#fff;font-family:Arial}
+.wrap{max-width:850px;margin:30px auto;padding:20px}
+.card{background:#1e293b;padding:20px;border-radius:16px}
+h1{margin-top:0}
+.top{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:15px}
+.stat{background:#334155;padding:8px 12px;border-radius:8px}
+button{width:100%;padding:14px;margin:8px 0;border:0;border-radius:10px;background:#334155;color:#fff;font-size:16px;cursor:pointer}
+button:hover{background:#475569}
+#next{display:none;background:#2563eb}
+.bar{height:12px;background:#334155;border-radius:10px;overflow:hidden;margin:12px 0}
+.fill{height:100%;width:0;background:#22c55e}
+#explain{display:none;background:#0b1220;padding:10px;border-radius:8px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+<h1>⚔ Exam Slayer V2</h1>
+<div class="top">
+<div class="stat">❤️ <span id=lives>3</span></div>
+<div class="stat">⭐ XP <span id=xp>0</span></div>
+<div class="stat">🏆 Lv <span id=lv>1</span></div>
+<div class="stat">🔥 <span id=streak>0</span></div>
+<div class="stat">⏱ <span id=time>20</span>s</div>
+</div>
+<div class="bar"><div class="fill" id=fill></div></div>
+<h2 id=q></h2>
+<div id=opts></div>
+<div id=explain></div>
+<button id=next onclick="nextQ()">Next ➜</button>
+</div>
+</div>
+<script>
+const qs=[
+{d:"Hard",q:"Which statement BEST explains the chapter title 'Reshaping India's Political Map'?",o:["Only wars mattered","Political authority and territories changed over time","Maps replaced history","Only rulers changed"],a:1,e:"The title emphasizes changing power and political boundaries."},
+{d:"Hard",q:"Universal Adult Franchise primarily protects which democratic ideal?",o:["Economic equality","Political equality","Religious authority","Military strength"],a:1,e:"Every eligible citizen gets an equal vote."},
+{d:"Boss",q:"A kingdom expanded rapidly but ignored administration. Most likely outcome?",o:["Long-term stability","Administrative problems and resistance","Permanent peace","Automatic prosperity"],a:1,e:"Expansion without governance is difficult to sustain."}
+];
+let i=0,xp=0,lv=1,st=0,lives=3,timer=20,intv;
+shuffle(qs);load();
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+function load(){
+clearInterval(intv);timer=20;tick();
+if(i>=qs.length||lives==0){document.body.innerHTML="<div class='wrap'><div class='card'><h1>Finished!</h1><p>XP:"+xp+"</p><p>Level:"+lv+"</p><button onclick='location.reload()'>Play Again</button></div></div>";return;}
+document.getElementById("fill").style.width=(i/qs.length*100)+"%";
+document.getElementById("next").style.display="none";
+document.getElementById("explain").style.display="none";
+let q=qs[i];
+document.getElementById("q").innerHTML="["+q.d+"] "+q.q;
+let h="";
+q.o.forEach((x,n)=>h+=`<button onclick="ans(${n})">${x}</button>`);
+opts.innerHTML=h;
+}
+function tick(){
+time.textContent=timer;
+intv=setInterval(()=>{timer--;time.textContent=timer;if(timer<=0){clearInterval(intv);wrong();}},1000);
+}
+function ans(n){
+clearInterval(intv);
+let q=qs[i];
+[...opts.children].forEach(b=>b.disabled=true);
+if(n==q.a){
+opts.children[n].style.background="#16a34a";
+st++;xp+=10+st*2;if(xp>=lv*40)lv++;
+}else{
+opts.children[n].style.background="#dc2626";
+opts.children[q.a].style.background="#16a34a";
+st=0;lives--;
+}
+update(q.e);
+}
+function wrong(){st=0;lives--;update("⏰ Time's up! "+qs[i].e);}
+function update(exp){
+xp.textContent=xp;lv.textContent=lv;streak.textContent=st;lives.textContent=lives;
+explain.style.display="block";explain.innerHTML="<b>Explanation:</b> "+exp;
+next.style.display="block";
+}
+function nextQ(){i++;load();}
+</script>
+</body>
+</html>

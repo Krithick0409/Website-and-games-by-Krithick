@@ -1,0 +1,3201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hand Cricket Franchise</title>
+  <style>
+    :root {
+      --bg: #070b12;
+      --panel: #101827;
+      --panel-2: #141f31;
+      --panel-3: #1b2a42;
+      --line: rgba(255,255,255,.1);
+      --text: #f4f8ff;
+      --muted: #9fb0c9;
+      --gold: #f7c948;
+      --green: #4ade80;
+      --red: #fb7185;
+      --cyan: #38bdf8;
+      --orange: #fb923c;
+      --shadow: 0 18px 45px rgba(0,0,0,.35);
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(56,189,248,.18), transparent 34rem),
+        linear-gradient(135deg, #070b12 0%, #101827 52%, #0e151f 100%);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    button, input, select { font: inherit; }
+    button {
+      border: 0;
+      color: var(--text);
+      cursor: pointer;
+      border-radius: var(--radius);
+      transition: transform .16s ease, background .16s ease, opacity .16s ease, border-color .16s ease;
+    }
+    button:hover:not(:disabled) { transform: translateY(-1px); }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+
+    .app { width: min(1220px, calc(100% - 28px)); margin: 0 auto; padding: 22px 0 36px; }
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: center;
+      padding: 18px;
+      background: rgba(16,24,39,.88);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 12px;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+    }
+    .brand { display: flex; gap: 14px; align-items: center; min-width: 0; }
+    .logo {
+      width: 54px;
+      height: 54px;
+      border-radius: var(--radius);
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--gold), var(--orange));
+      color: #101010;
+      font-size: 28px;
+      font-weight: 900;
+      box-shadow: inset 0 -9px 20px rgba(0,0,0,.18);
+      flex: 0 0 auto;
+    }
+    h1 { margin: 0 0 5px; font-size: clamp(24px, 4vw, 42px); letter-spacing: 0; }
+    .subtitle { color: var(--muted); font-size: 14px; line-height: 1.35; }
+    .money {
+      padding: 12px 16px;
+      background: #0a1220;
+      border: 1px solid rgba(247,201,72,.35);
+      border-radius: var(--radius);
+      text-align: right;
+      min-width: 170px;
+    }
+    .money span { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; }
+    .money strong { color: var(--gold); font-size: 28px; }
+
+    .nav {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+      gap: 9px;
+      margin: 16px 0;
+    }
+    .nav button {
+      padding: 13px 10px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      min-height: 48px;
+      font-weight: 800;
+    }
+    .nav button.active { background: var(--cyan); color: #06131d; border-color: transparent; }
+
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .card {
+      background: rgba(16,24,39,.94);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card.pad { padding: 18px; }
+    .card h2, .card h3 { margin: 0; letter-spacing: 0; }
+    .card h2 { font-size: 24px; }
+    .card h3 { font-size: 18px; }
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    .metric {
+      min-height: 112px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .metric .label { color: var(--muted); font-size: 13px; text-transform: uppercase; font-weight: 800; }
+    .metric .value { font-size: clamp(26px, 5vw, 42px); font-weight: 900; color: var(--text); }
+    .metric .hint { color: var(--muted); font-size: 13px; }
+    .accent-gold { border-top: 3px solid var(--gold); }
+    .accent-green { border-top: 3px solid var(--green); }
+    .accent-cyan { border-top: 3px solid var(--cyan); }
+    .accent-red { border-top: 3px solid var(--red); }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    input, select {
+      background: #0a1220;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px 13px;
+      min-height: 46px;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: var(--cyan); }
+
+    .primary { background: linear-gradient(135deg, var(--cyan), #60a5fa); color: #06131d; font-weight: 900; padding: 12px 15px; }
+    .success { background: linear-gradient(135deg, var(--green), #22c55e); color: #052e16; font-weight: 900; padding: 12px 15px; }
+    .danger { background: linear-gradient(135deg, var(--red), #f43f5e); color: #fff; font-weight: 900; padding: 12px 15px; }
+    .ghost { background: #0a1220; border: 1px solid var(--line); padding: 12px 15px; font-weight: 800; }
+    .small { padding: 9px 11px; font-size: 13px; min-height: 38px; }
+
+    .player-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 12px;
+    }
+    .player {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      min-height: 196px;
+    }
+    .player.owned { border-color: rgba(74,222,128,.34); }
+    .player.selected { border-color: var(--gold); background: #1d2736; }
+    .player-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+    .name { font-size: 17px; font-weight: 900; line-height: 1.25; }
+    .meta { color: var(--muted); font-size: 13px; margin-top: 3px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 52px;
+      height: 34px;
+      padding: 0 9px;
+      border-radius: var(--radius);
+      background: rgba(247,201,72,.16);
+      color: var(--gold);
+      border: 1px solid rgba(247,201,72,.32);
+      font-weight: 900;
+    }
+    .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .mini-stat { background: #0a1220; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px; }
+    .mini-stat span { color: var(--muted); display: block; font-size: 11px; }
+    .mini-stat strong { font-size: 17px; }
+    .player-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+
+    .notice {
+      padding: 13px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: #0a1220;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .notice.good { color: #dcfce7; border-color: rgba(74,222,128,.3); background: rgba(22,101,52,.14); }
+    .notice.bad { color: #ffe4e6; border-color: rgba(251,113,133,.32); background: rgba(136,19,55,.14); }
+    .notice.warn { color: #fef3c7; border-color: rgba(247,201,72,.32); background: rgba(120,53,15,.18); }
+
+    .toolbar-band {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin: 14px 0;
+    }
+    .info-tile {
+      background: #0a1220;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 13px;
+      min-height: 84px;
+    }
+    .info-tile span { color: var(--muted); display: block; font-size: 12px; text-transform: uppercase; font-weight: 800; }
+    .info-tile strong { display: block; margin-top: 7px; font-size: 22px; color: var(--text); }
+    .meter {
+      height: 9px;
+      background: #070b12;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 9px;
+    }
+    .meter i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--red), var(--gold), var(--green)); transition: width .3s ease; }
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      border: 1px solid var(--line);
+      background: #0a1220;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .pill.good { color: #dcfce7; border-color: rgba(74,222,128,.32); }
+    .pill.warn { color: #fef3c7; border-color: rgba(247,201,72,.32); }
+    .pill.bad { color: #ffe4e6; border-color: rgba(251,113,133,.32); }
+    [data-tip] { position: relative; }
+    [data-tip]:hover::after, [data-tip]:focus-visible::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 8px);
+      transform: translateX(-50%);
+      min-width: 180px;
+      max-width: 260px;
+      padding: 8px 10px;
+      border-radius: var(--radius);
+      background: #020617;
+      color: var(--text);
+      border: 1px solid var(--line);
+      font-size: 12px;
+      line-height: 1.35;
+      z-index: 30;
+      box-shadow: var(--shadow);
+      pointer-events: none;
+      text-align: left;
+    }
+
+    .xi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+    }
+    .xi-slot {
+      background: #0a1220;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      min-height: 72px;
+    }
+    .xi-slot strong { display: block; }
+    .xi-slot span { color: var(--muted); font-size: 13px; }
+
+    .match-board {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+    .scorebox {
+      background: linear-gradient(135deg, #121c2e, #0a1220);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      min-height: 190px;
+    }
+    .scorebox .big { font-size: clamp(44px, 8vw, 76px); font-weight: 900; line-height: 1; margin: 8px 0; }
+    .scorebox .phase { color: var(--muted); font-weight: 800; text-transform: uppercase; font-size: 13px; }
+    .scorebox .details { color: var(--muted); line-height: 1.6; }
+    .run-buttons {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .run-buttons button {
+      min-height: 64px;
+      font-size: 24px;
+      font-weight: 900;
+      background: var(--panel-3);
+      border: 1px solid var(--line);
+    }
+    .run-buttons button:hover:not(:disabled) { background: var(--gold); color: #111; }
+    .log {
+      max-height: 256px;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      padding-right: 4px;
+    }
+    .log-entry {
+      padding: 10px;
+      background: #0a1220;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .log-entry strong { color: var(--text); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+    table { width: 100%; border-collapse: collapse; min-width: 620px; background: #0a1220; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    .achievement-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 12px;
+    }
+    .achievement {
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      border-radius: var(--radius);
+      padding: 13px;
+      min-height: 132px;
+      transition: transform .18s ease, border-color .18s ease;
+    }
+    .achievement.unlocked { border-color: rgba(74,222,128,.45); }
+    .achievement.locked { opacity: .72; }
+    .achievement:hover { transform: translateY(-2px); }
+    .toast-stack {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      display: grid;
+      gap: 10px;
+      z-index: 50;
+      width: min(360px, calc(100vw - 32px));
+    }
+    .toast {
+      background: #0a1220;
+      border: 1px solid rgba(56,189,248,.35);
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: var(--shadow);
+      animation: slideUp .25s ease both;
+      color: var(--text);
+      line-height: 1.35;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: rgba(2,6,23,.75);
+      z-index: 60;
+      padding: 18px;
+    }
+    .modal-backdrop.active { display: grid; }
+    .modal {
+      width: min(560px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    .modal p { color: var(--muted); line-height: 1.45; }
+    .loader {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: #070b12;
+      z-index: 80;
+      transition: opacity .25s ease, visibility .25s ease;
+    }
+    .loader.hidden { opacity: 0; visibility: hidden; }
+    .spinner {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      border: 5px solid rgba(255,255,255,.12);
+      border-top-color: var(--gold);
+      animation: spin .8s linear infinite;
+    }
+    textarea {
+      width: 100%;
+      min-height: 160px;
+      resize: vertical;
+      background: #0a1220;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      font: 13px/1.45 Consolas, monospace;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .leader-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .leader-row:last-child { border-bottom: 0; }
+    .leader-row span { color: var(--muted); }
+    .leader-row strong { color: var(--gold); }
+
+    .hidden { display: none !important; }
+    .empty {
+      display: grid;
+      place-items: center;
+      min-height: 220px;
+      text-align: center;
+      color: var(--muted);
+      background: rgba(10,18,32,.55);
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+
+    @media (max-width: 900px) {
+      .topbar { grid-template-columns: 1fr; position: static; }
+      .money { text-align: left; }
+      .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .span-3, .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 12; }
+      .match-board { grid-template-columns: 1fr; }
+      .run-buttons { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+      .app { width: min(100% - 18px, 1220px); padding-top: 10px; }
+      .topbar { padding: 14px; }
+      .brand { align-items: flex-start; }
+      .logo { width: 46px; height: 46px; font-size: 24px; }
+      .nav { grid-template-columns: 1fr; }
+      .controls { width: 100%; }
+      .controls input, .controls select, .controls button { width: 100%; }
+      .run-buttons button { min-height: 58px; }
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      background:
+        linear-gradient(180deg, rgba(56,189,248,.18), transparent 36%),
+        radial-gradient(ellipse at 50% 105%, rgba(74,222,128,.22) 0 18%, transparent 19%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.055) 0 2px, transparent 2px 72px),
+        linear-gradient(180deg, #08111f, #05070c);
+      animation: stadiumPan 24s linear infinite;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto 0 0;
+      height: 24vh;
+      z-index: -2;
+      background:
+        radial-gradient(ellipse at center, rgba(247,201,72,.26), transparent 56%),
+        repeating-linear-gradient(90deg, rgba(74,222,128,.36) 0 18px, rgba(34,197,94,.26) 18px 36px);
+      opacity: .34;
+      filter: blur(.2px);
+    }
+    body.theme-day {
+      --bg: #07121c;
+      --panel: rgba(12, 23, 36, .72);
+      --panel-2: rgba(18, 32, 49, .82);
+      --panel-3: rgba(30, 52, 76, .78);
+      --text: #f9fbff;
+    }
+    body.theme-night {
+      --panel: rgba(9, 15, 27, .78);
+      --panel-2: rgba(14, 22, 36, .86);
+      --panel-3: rgba(22, 34, 54, .84);
+    }
+    .card, .topbar, .scorebox, .player, .info-tile, .modal {
+      backdrop-filter: blur(16px) saturate(128%);
+      background-image: linear-gradient(135deg, rgba(255,255,255,.055), rgba(255,255,255,.015));
+    }
+    .player {
+      position: relative;
+      overflow: hidden;
+    }
+    .player::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent, rgba(255,255,255,.08), transparent);
+      transform: translateX(-115%);
+      transition: transform .65s ease;
+      pointer-events: none;
+    }
+    .player:hover::before { transform: translateX(115%); }
+    .screen {
+      animation: screenIn .24s ease both;
+    }
+    .premium-glow {
+      box-shadow: 0 22px 70px rgba(56,189,248,.14), inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .watchlisted {
+      border-color: rgba(247,201,72,.62) !important;
+      box-shadow: 0 0 0 1px rgba(247,201,72,.14), var(--shadow);
+    }
+    .particle-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 70;
+      overflow: hidden;
+    }
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 18px currentColor;
+      animation: particleBurst .9s ease-out forwards;
+    }
+    .global-tools {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto auto;
+      gap: 10px;
+      margin: 0 0 16px;
+    }
+    .global-results {
+      display: none;
+      margin-bottom: 16px;
+    }
+    .global-results.active { display: block; }
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .shortcut-key {
+      display: inline-grid;
+      place-items: center;
+      min-width: 28px;
+      height: 26px;
+      padding: 0 7px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: #0a1220;
+      color: var(--gold);
+      font-weight: 900;
+    }
+    .audio-dock {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 0 0 16px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(10,18,32,.58);
+      backdrop-filter: blur(14px);
+    }
+    .audio-dock input[type="range"] { width: 160px; accent-color: var(--gold); }
+    .manager-board {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .lineup-list {
+      display: grid;
+      gap: 8px;
+      min-height: 72px;
+    }
+    .lineup-item {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 9px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(10,18,32,.8);
+      cursor: grab;
+      transition: transform .15s ease, border-color .15s ease;
+    }
+    .lineup-item:hover { transform: translateY(-1px); border-color: rgba(247,201,72,.38); }
+    .lineup-item.dragging { opacity: .55; }
+    .role-select {
+      width: 100%;
+      margin-top: 8px;
+    }
+    .profile-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 12px 0;
+    }
+    .sparkline {
+      width: 100%;
+      height: 84px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(56,189,248,.1), rgba(10,18,32,.8));
+    }
+    .counter-pop {
+      animation: counterPop .22s ease;
+    }
+    .celebrate {
+      animation: celebratePulse .55s ease;
+    }
+    .news-feed {
+      display: grid;
+      gap: 8px;
+      max-height: 280px;
+      overflow: auto;
+    }
+    .trophy-room {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .trophy {
+      padding: 13px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(247,201,72,.34);
+      background: linear-gradient(135deg, rgba(247,201,72,.14), rgba(56,189,248,.08));
+      min-height: 92px;
+    }
+    @keyframes counterPop {
+      50% { transform: scale(1.08); color: var(--gold); }
+    }
+    @keyframes celebratePulse {
+      50% { box-shadow: 0 0 0 6px rgba(247,201,72,.16), var(--shadow); transform: scale(1.01); }
+    }
+    @keyframes stadiumPan {
+      0% { background-position: 0 0, 0 0, 0 0, 0 0; }
+      100% { background-position: 0 0, 0 0, 220px 0, 0 0; }
+    }
+    @keyframes screenIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes particleBurst {
+      to { transform: translate(var(--tx), var(--ty)) scale(.2); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">HC</div>
+        <div>
+          <h1>Hand Cricket Franchise</h1>
+          <div class="subtitle">Buy stars, set your XI, chase targets, and build the richest hand cricket club.</div>
+        </div>
+      </div>
+      <div class="money">
+        <span>Budget</span>
+        <strong id="budgetView">700 Cr</strong>
+      </div>
+    </header>
+
+    <nav class="nav" aria-label="Game sections">
+      <button class="active" data-screen="dashboard">Dashboard</button>
+      <button data-screen="auction">Auction</button>
+      <button data-screen="squad">Squad</button>
+      <button data-screen="match">Match</button>
+      <button data-screen="league">League</button>
+      <button data-screen="achievements">Achievements</button>
+      <button data-screen="history">History</button>
+      <button data-screen="saves">Saves</button>
+      <button data-screen="leaderboard">Leaderboard</button>
+    </nav>
+
+    <div class="global-tools">
+      <input id="globalSearch" type="search" placeholder="Global search: players, records, help">
+      <button class="ghost" id="themeToggle" data-tip="Cycle stadium lighting">Theme</button>
+      <button class="ghost" id="helpButton" data-tip="Open controls and tutorial">Help</button>
+    </div>
+    <div class="audio-dock">
+      <button class="ghost" id="muteButton" data-tip="Mute or unmute game sounds">Sound On</button>
+      <label class="subtitle" for="volumeSlider">Master Volume</label>
+      <input id="volumeSlider" type="range" min="0" max="100" value="45">
+      <span class="pill" id="audioStatus">Audio ready</span>
+    </div>
+    <div id="globalResults" class="card pad global-results"></div>
+
+    <main>
+      <section id="dashboard" class="screen">
+        <div class="grid">
+          <div class="card pad metric accent-gold span-3"><div class="label">Squad Size</div><div class="value" id="dashSquad">0</div><div class="hint">Players owned</div></div>
+          <div class="card pad metric accent-green span-3"><div class="label">Wins</div><div class="value" id="dashWins">0</div><div class="hint">Franchise record</div></div>
+          <div class="card pad metric accent-cyan span-3"><div class="label">Highest Score</div><div class="value" id="dashHigh">0</div><div class="hint">Best innings</div></div>
+          <div class="card pad metric accent-red span-3"><div class="label">Team Value</div><div class="value" id="dashValue">0 Cr</div><div class="hint">Current squad worth</div></div>
+
+          <div class="card pad span-7">
+            <div class="section-head">
+              <h2>Franchise Command</h2>
+              <button class="primary" data-go="auction">Enter Auction</button>
+            </div>
+            <div class="notice" id="dashTip"></div>
+          </div>
+          <div class="card pad span-5">
+            <h2>Season Stats</h2>
+            <div id="seasonStats" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="auction" class="screen hidden">
+        <div class="card pad">
+          <div class="section-head">
+            <h2>Auction Room</h2>
+            <div class="controls">
+              <input id="searchBox" type="search" placeholder="Search player name">
+              <select id="sortSelect" aria-label="Sort players">
+                <option value="rating">Sort by rating</option>
+                <option value="price">Sort by price</option>
+                <option value="name">Sort by name</option>
+              </select>
+            </div>
+          </div>
+          <div id="auctionList" class="player-list"></div>
+          <div class="toolbar-band">
+            <div class="info-tile"><span>Recommended Targets</span><strong id="recommendedCount">0</strong><div id="recommendedTargets" class="pill-row" style="margin-top:10px"></div></div>
+            <div class="info-tile"><span>Market Trend</span><strong id="marketTrend">Stable</strong><div class="meter"><i id="marketMeter"></i></div></div>
+            <div class="info-tile"><span>Auction Alerts</span><strong id="auctionAlertCount">0</strong><div id="auctionAlerts" class="subtitle" style="margin-top:8px"></div></div>
+            <div class="info-tile"><span>Auction Clock</span><strong id="auctionClock">30s</strong><div class="subtitle" id="auctionClockHint" style="margin-top:8px">Market refresh countdown</div></div>
+          </div>
+          <div class="grid" style="margin-top:16px">
+            <div class="card pad span-6">
+              <h3>Player Comparison</h3>
+              <div id="comparePanel" class="toolbar-band"></div>
+            </div>
+            <div class="card pad span-6">
+              <h3>Bidding History</h3>
+              <div id="auctionHistory"></div>
+            </div>
+            <div class="card pad span-12">
+              <h3>Best Deals & Watchlist</h3>
+              <div id="bestDealsPanel" class="toolbar-band"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="squad" class="screen hidden">
+        <div class="grid">
+          <div class="card pad span-4">
+            <h2>Squad Summary</h2>
+            <div id="squadSummary" style="margin-top:12px"></div>
+            <div id="managementPanel" style="margin-top:14px"></div>
+            <div class="notice" style="margin-top:14px">Select exactly 11 players for your Playing XI. Your XI boosts computer difficulty in spirit, but every match still comes down to your hand cricket choices.</div>
+          </div>
+          <div class="card pad span-8">
+            <div class="section-head">
+              <h2>Playing XI</h2>
+              <button class="ghost" id="autoXI">Auto Pick Best XI</button>
+            </div>
+            <div id="xiGrid" class="xi-grid"></div>
+          </div>
+          <div class="card pad span-12">
+            <div class="section-head">
+              <h2>Owned Players</h2>
+              <span class="subtitle" id="xiCount">0 selected</span>
+            </div>
+            <div id="squadList" class="player-list"></div>
+          </div>
+          <div class="card pad span-12">
+            <div class="section-head">
+              <h2>Advanced Team Management</h2>
+              <span class="subtitle">Drag batting order, assign bowling phases, and choose specialists</span>
+            </div>
+            <div id="teamStrengthPanel" class="toolbar-band"></div>
+            <div class="manager-board">
+              <div>
+                <h3>Batting Lineup</h3>
+                <div id="battingOrderList" class="lineup-list"></div>
+              </div>
+              <div>
+                <h3>Bowling Plans</h3>
+                <div id="bowlingPlanList" class="lineup-list"></div>
+              </div>
+              <div>
+                <h3>Specialists</h3>
+                <div id="specialistPanel"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="match" class="screen hidden">
+        <div class="grid">
+          <div class="card pad span-12">
+            <div class="section-head">
+              <h2>Hand Cricket Match</h2>
+              <div class="controls">
+                <button class="ghost" id="newMatch">New Match</button>
+                <button class="danger" id="forfeitMatch">Forfeit</button>
+              </div>
+            </div>
+            <div id="matchNotice" class="notice"></div>
+            <div class="match-board" style="margin-top:16px">
+              <div class="scorebox">
+                <div class="phase" id="inningsView">Ready</div>
+                <div class="big" id="scoreView">0/0</div>
+                <div class="details" id="targetView">Build a Playing XI to start a proper franchise match.</div>
+                <div class="run-buttons" id="runButtons">
+                  <button data-run="1">1</button><button data-run="2">2</button><button data-run="3">3</button>
+                  <button data-run="4">4</button><button data-run="5">5</button><button data-run="6">6</button>
+                </div>
+              </div>
+              <div class="scorebox">
+                <div class="phase">Ball Log</div>
+                <div id="matchLog" class="log"></div>
+              </div>
+            </div>
+            <div class="grid" style="margin-top:16px">
+              <div class="card pad span-4"><h3>Momentum</h3><div id="momentumPanel"></div></div>
+              <div class="card pad span-4"><h3>Crowd & Pressure</h3><div id="crowdPanel"></div></div>
+              <div class="card pad span-4"><h3>Highlights</h3><div id="highlightsPanel"></div></div>
+              <div class="card pad span-12"><h3>Post-Match Analysis</h3><div id="analysisPanel"></div></div>
+              <div class="card pad span-12"><h3>Detailed Scorecard</h3><div id="scorecardPanel"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="league" class="screen hidden">
+        <div class="grid">
+          <div class="card pad span-4">
+            <div class="section-head">
+              <h2>League Office</h2>
+              <button class="primary" id="playLeagueRound" data-tip="Simulates the next league round using your team strength, chemistry, and form.">Play Round</button>
+            </div>
+            <div id="leagueSummary"></div>
+          </div>
+          <div class="card pad span-8">
+            <h2>Standings</h2>
+            <div id="standingsTable" class="table-wrap" style="margin-top:12px"></div>
+          </div>
+          <div class="card pad span-6">
+            <h2>Playoffs</h2>
+            <div id="playoffPanel" style="margin-top:12px"></div>
+          </div>
+          <div class="card pad span-6">
+            <h2>Championship History</h2>
+            <div id="championshipHistory" style="margin-top:12px"></div>
+          </div>
+          <div class="card pad span-12">
+            <h2>Divisions, Rivalries & Awards</h2>
+            <div id="divisionPanel" class="toolbar-band" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="achievements" class="screen hidden">
+        <div class="card pad">
+          <div class="section-head">
+            <h2>Achievements</h2>
+            <span class="subtitle" id="achievementSummary">0 unlocked</span>
+          </div>
+          <div id="achievementGrid" class="achievement-grid"></div>
+        </div>
+      </section>
+
+      <section id="history" class="screen hidden">
+        <div class="grid">
+          <div class="card pad span-6">
+            <h2>Franchise History</h2>
+            <div id="franchiseHistory" style="margin-top:12px"></div>
+          </div>
+          <div class="card pad span-6">
+            <h2>Season Recaps</h2>
+            <div id="seasonRecaps" style="margin-top:12px"></div>
+          </div>
+          <div class="card pad span-12">
+            <h2>Player Statistics</h2>
+            <div id="playerStatsTable" class="table-wrap" style="margin-top:12px"></div>
+          </div>
+          <div class="card pad span-12">
+            <h2>Trophy Room & News Feed</h2>
+            <div class="grid" style="margin-top:12px">
+              <div class="span-5"><div id="trophyRoom" class="trophy-room"></div></div>
+              <div class="span-7"><div id="newsFeed" class="news-feed"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="saves" class="screen hidden">
+        <div class="grid">
+          <div class="card pad span-6">
+            <h2>Save Tools</h2>
+            <div class="controls" style="margin-top:14px">
+              <button class="primary" id="exportSave">Export Save</button>
+              <button class="ghost" id="copySave">Copy Export</button>
+              <button class="success" id="importSave">Import Save</button>
+              <button class="success" id="importSaveFile">Import File</button>
+              <button class="ghost" id="restoreBackup">Restore Backup</button>
+              <button class="ghost" id="restoreRecovery">Recover Save</button>
+            </div>
+            <input id="saveFile" type="file" accept=".json,.txt,application/json" class="hidden">
+            <div class="notice warn" style="margin-top:14px">Exports include budget, squad, league, achievements, history, and player statistics. A backup is kept automatically before each save.</div>
+          </div>
+          <div class="card pad span-6">
+            <h2>Export / Import Data</h2>
+            <textarea id="saveText" spellcheck="false" aria-label="Save export data"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section id="leaderboard" class="screen hidden">
+        <div class="grid">
+          <div class="card pad span-6">
+            <div class="section-head">
+              <h2>Local Leaderboard</h2>
+              <button class="ghost" id="resetGame">Reset Franchise</button>
+            </div>
+            <div id="leaders"></div>
+          </div>
+          <div class="card pad span-6">
+            <h2>Records</h2>
+            <div id="records" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div id="toastStack" class="toast-stack" aria-live="polite"></div>
+  <div id="particleLayer" class="particle-layer"></div>
+  <div id="loader" class="loader"><div><div class="spinner"></div><div class="subtitle" style="margin-top:12px;text-align:center">Loading dynasty...</div></div></div>
+  <div id="confirmModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal">
+      <h2 id="confirmTitle">Confirm Action</h2>
+      <p id="confirmText"></p>
+      <div class="controls">
+        <button class="danger" id="confirmYes">Confirm</button>
+        <button class="ghost" id="confirmNo">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <div id="compareModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="compareTitle">
+    <div class="modal">
+      <div class="section-head">
+        <h2 id="compareTitle">Player Comparison</h2>
+        <button class="ghost" id="closeCompare">Close</button>
+      </div>
+      <div id="compareModalBody"></div>
+    </div>
+  </div>
+  <div id="helpModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal">
+      <div class="section-head">
+        <h2 id="helpTitle">Dynasty Guide</h2>
+        <button class="ghost" id="closeHelp">Close</button>
+      </div>
+      <div id="helpBody"></div>
+    </div>
+  </div>
+  <div id="playerProfileModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="playerProfileTitle">
+    <div class="modal" style="width:min(880px,100%)">
+      <div class="section-head">
+        <h2 id="playerProfileTitle">Player Profile</h2>
+        <button class="ghost" id="closePlayerProfile">Close</button>
+      </div>
+      <div id="playerProfileBody"></div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "handCricketFranchiseSaveV1";
+    const countries = ["India","Australia","England","South Africa","New Zealand","Pakistan","Sri Lanka","West Indies","Bangladesh","Afghanistan"];
+    const firstNames = ["Arjun","Rohan","Virat","Dev","Kabir","Aarav","Nikhil","Ishaan","Rahul","Sameer","Marcus","Liam","Oliver","Noah","Ethan","James","Mason","Lucas","Leo","Henry","Kane","Trent","Glenn","Mitchell","Steve","Ben","Jos","Sam","Adil","Jofra","Quinton","Aiden","Kagiso","Lungi","Marco","Babar","Shaheen","Fakhar","Naseem","Shadab"];
+    const lastNames = ["Sharma","Patel","Singh","Kapoor","Reddy","Gill","Iyer","Khan","Malik","Rana","Smith","Warner","Maxwell","Starc","Cummins","Root","Buttler","Stokes","Archer","Wood","Williamson","Boult","Southee","Phillips","Conway","Afridi","Azam","Rizwan","Hasan","Nawaz","Perera","Mendis","Hasaranga","Narine","Russell","Pooran","Shakib","Rashid","Nabi","Mujeeb"];
+    const roles = ["Batsman","All-Rounder","Spinner","Fast Bowler","Wicket Keeper"];
+
+    function seeded(seed) {
+      let x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    }
+
+    function generatePlayers() {
+      const used = new Set();
+      const list = [];
+      for (let i = 0; i < 100; i++) {
+        let first = firstNames[Math.floor(seeded(i + 4) * firstNames.length)];
+        let last = lastNames[Math.floor(seeded(i + 19) * lastNames.length)];
+        let name = first + " " + last;
+        if (used.has(name)) name = first + " " + last + " " + (i + 1);
+        used.add(name);
+        const role = roles[i % roles.length];
+        const overall = 60 + Math.floor(seeded(i + 77) * 40);
+        let batting = 55 + Math.floor(seeded(i + 101) * 45);
+        let bowling = 55 + Math.floor(seeded(i + 151) * 45);
+        if (role === "Batsman" || role === "Wicket Keeper") batting = Math.min(99, batting + 8);
+        if (role === "Spinner" || role === "Fast Bowler") bowling = Math.min(99, bowling + 9);
+        if (role === "All-Rounder") { batting = Math.min(99, batting + 4); bowling = Math.min(99, bowling + 4); }
+        const value = Math.max(5, Math.round((overall * overall / 155) + (batting + bowling - 120) / 12 + seeded(i + 301) * 10));
+        list.push({
+          id: "p" + i,
+          name,
+          country: countries[Math.floor(seeded(i + 33) * countries.length)],
+          role,
+          overall,
+          batting,
+          bowling,
+          value
+        });
+      }
+      return list.sort((a, b) => b.overall - a.overall);
+    }
+
+    const players = generatePlayers();
+    const freshState = () => ({
+      budget: 700,
+      squad: [],
+      playingXI: [],
+      stats: { matches: 0, wins: 0, losses: 0, highestScore: 0, totalRuns: 0, totalWickets: 0 },
+      leaderboard: { highestScore: 0, mostWins: 0, teamValue: 0 },
+      match: null
+    });
+
+    let state = load();
+
+    function load() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!saved) return freshState();
+        const base = freshState();
+        return {
+          ...base,
+          ...saved,
+          stats: { ...base.stats, ...(saved.stats || {}) },
+          leaderboard: { ...base.leaderboard, ...(saved.leaderboard || {}) },
+          squad: Array.isArray(saved.squad) ? saved.squad : [],
+          playingXI: Array.isArray(saved.playingXI) ? saved.playingXI.filter(id => (saved.squad || []).includes(id)).slice(0, 11) : []
+        };
+      } catch (e) {
+        return freshState();
+      }
+    }
+
+    function save() {
+      updateLeaderboard();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function byId(id) { return document.getElementById(id); }
+    function playerById(id) { return players.find(p => p.id === id); }
+    function ownedPlayers() { return state.squad.map(playerById).filter(Boolean); }
+    function teamValue() { return ownedPlayers().reduce((sum, p) => sum + p.value, 0); }
+    function avgRating() {
+      const squad = ownedPlayers();
+      if (!squad.length) return 0;
+      return Math.round(squad.reduce((sum, p) => sum + p.overall, 0) / squad.length);
+    }
+    function crore(n) { return Math.round(n) + " Cr"; }
+
+    function updateLeaderboard() {
+      state.leaderboard.highestScore = Math.max(state.leaderboard.highestScore || 0, state.stats.highestScore || 0);
+      state.leaderboard.mostWins = Math.max(state.leaderboard.mostWins || 0, state.stats.wins || 0);
+      state.leaderboard.teamValue = Math.max(state.leaderboard.teamValue || 0, teamValue());
+    }
+
+    function setScreen(name) {
+      document.querySelectorAll(".screen").forEach(s => s.classList.toggle("hidden", s.id !== name));
+      document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("active", b.dataset.screen === name));
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function playerCard(p, mode) {
+      const owned = state.squad.includes(p.id);
+      const selected = state.playingXI.includes(p.id);
+      const el = document.createElement("article");
+      el.className = "player" + (owned ? " owned" : "") + (selected ? " selected" : "");
+      el.innerHTML = `
+        <div class="player-top">
+          <div>
+            <div class="name">${p.name}</div>
+            <div class="meta">${p.country} • ${p.role}</div>
+          </div>
+          <div class="badge">${p.overall}</div>
+        </div>
+        <div class="stat-row">
+          <div class="mini-stat"><span>Bat</span><strong>${p.batting}</strong></div>
+          <div class="mini-stat"><span>Bowl</span><strong>${p.bowling}</strong></div>
+          <div class="mini-stat"><span>Value</span><strong>${p.value} Cr</strong></div>
+        </div>
+        <div class="player-actions"></div>
+      `;
+      const actions = el.querySelector(".player-actions");
+      if (mode === "auction") {
+        const btn = document.createElement("button");
+        btn.className = owned ? "ghost small" : "success small";
+        btn.textContent = owned ? "Owned" : "Buy Player";
+        btn.disabled = owned || state.budget < p.value;
+        btn.onclick = () => buyPlayer(p.id);
+        actions.appendChild(btn);
+      } else {
+        const xiBtn = document.createElement("button");
+        xiBtn.className = selected ? "ghost small" : "primary small";
+        xiBtn.textContent = selected ? "Remove from XI" : "Set in XI";
+        xiBtn.onclick = () => toggleXI(p.id);
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "danger small";
+        removeBtn.textContent = "Remove";
+        removeBtn.onclick = () => removePlayer(p.id);
+        actions.append(xiBtn, removeBtn);
+      }
+      return el;
+    }
+
+    function buyPlayer(id) {
+      const p = playerById(id);
+      if (!p || state.squad.includes(id) || state.budget < p.value) return;
+      state.budget -= p.value;
+      state.squad.push(id);
+      if (state.playingXI.length < 11) state.playingXI.push(id);
+      save();
+      render();
+    }
+
+    function removePlayer(id) {
+      const p = playerById(id);
+      if (!p) return;
+      state.squad = state.squad.filter(x => x !== id);
+      state.playingXI = state.playingXI.filter(x => x !== id);
+      state.budget += Math.floor(p.value * 0.65);
+      save();
+      render();
+    }
+
+    function toggleXI(id) {
+      if (!state.squad.includes(id)) return;
+      if (state.playingXI.includes(id)) {
+        state.playingXI = state.playingXI.filter(x => x !== id);
+      } else if (state.playingXI.length < 11) {
+        state.playingXI.push(id);
+      }
+      save();
+      render();
+    }
+
+    function autoPickXI() {
+      state.playingXI = ownedPlayers().sort((a, b) => b.overall - a.overall).slice(0, 11).map(p => p.id);
+      save();
+      render();
+    }
+
+    function renderDashboard() {
+      byId("dashSquad").textContent = state.squad.length;
+      byId("dashWins").textContent = state.stats.wins;
+      byId("dashHigh").textContent = state.stats.highestScore;
+      byId("dashValue").textContent = crore(teamValue());
+      let tip = "Start in the auction, buy at least 11 players, then set your Playing XI and begin a match.";
+      if (state.squad.length >= 11 && state.playingXI.length < 11) tip = "Your squad is ready. Pick exactly 11 players in the Squad screen before taking the field.";
+      if (state.playingXI.length === 11) tip = "Your XI is ready. Head to Match, play two innings, and earn prize money after the result.";
+      byId("dashTip").textContent = tip;
+      byId("seasonStats").innerHTML = `
+        ${row("Matches Played", state.stats.matches)}
+        ${row("Wins", state.stats.wins)}
+        ${row("Losses", state.stats.losses)}
+        ${row("Total Runs", state.stats.totalRuns)}
+        ${row("Total Wickets", state.stats.totalWickets)}
+        ${row("Average Rating", avgRating())}
+      `;
+    }
+
+    function renderAuction() {
+      const q = byId("searchBox").value.trim().toLowerCase();
+      const sort = byId("sortSelect").value;
+      let list = players.filter(p => p.name.toLowerCase().includes(q));
+      if (sort === "rating") list.sort((a, b) => b.overall - a.overall);
+      if (sort === "price") list.sort((a, b) => a.value - b.value);
+      if (sort === "name") list.sort((a, b) => a.name.localeCompare(b.name));
+      const wrap = byId("auctionList");
+      wrap.innerHTML = "";
+      list.forEach(p => wrap.appendChild(playerCard(p, "auction")));
+    }
+
+    function renderSquad() {
+      byId("squadSummary").innerHTML = `
+        ${row("Owned Players", state.squad.length)}
+        ${row("Team Value", crore(teamValue()))}
+        ${row("Average Rating", avgRating())}
+        ${row("Playing XI", state.playingXI.length + "/11")}
+      `;
+      byId("xiCount").textContent = state.playingXI.length + " selected";
+      const xi = byId("xiGrid");
+      xi.innerHTML = "";
+      for (let i = 0; i < 11; i++) {
+        const p = playerById(state.playingXI[i]);
+        const slot = document.createElement("div");
+        slot.className = "xi-slot";
+        slot.innerHTML = p ? `<strong>${i + 1}. ${p.name}</strong><span>${p.role} • OVR ${p.overall}</span>` : `<strong>${i + 1}. Empty Slot</strong><span>Select a player below</span>`;
+        xi.appendChild(slot);
+      }
+      const wrap = byId("squadList");
+      wrap.innerHTML = "";
+      const squad = ownedPlayers().sort((a, b) => b.overall - a.overall);
+      if (!squad.length) {
+        wrap.innerHTML = `<div class="empty">No players yet. Visit the auction and start building your franchise.</div>`;
+      } else {
+        squad.forEach(p => wrap.appendChild(playerCard(p, "squad")));
+      }
+    }
+
+    function row(label, value) {
+      return `<div class="leader-row"><span>${label}</span><strong>${value}</strong></div>`;
+    }
+
+    function newMatch() {
+      if (state.playingXI.length !== 11) {
+        state.match = null;
+        save();
+        renderMatch("Select exactly 11 players before starting a match.", "bad");
+        return;
+      }
+      state.match = {
+        active: true,
+        innings: 1,
+        batting: "player",
+        playerRuns: 0,
+        playerWickets: 0,
+        computerRuns: 0,
+        computerWickets: 0,
+        target: null,
+        balls: 0,
+        log: ["Match started. You bat first."]
+      };
+      save();
+      renderMatch();
+    }
+
+    function forfeitMatch() {
+      if (!state.match || !state.match.active) return;
+      endMatch("lost", "Match forfeited. You receive 3 Cr participation money.");
+    }
+
+    function playRun(run) {
+      const m = state.match;
+      if (!m || !m.active) return;
+      const computer = 1 + Math.floor(Math.random() * 6);
+      m.balls += 1;
+      const out = run === computer;
+      if (m.batting === "player") {
+        if (out) {
+          m.playerWickets++;
+          m.log.unshift(`Ball ${m.balls}: You chose ${run}, computer chose ${computer}. OUT.`);
+        } else {
+          m.playerRuns += run;
+          m.log.unshift(`Ball ${m.balls}: You chose ${run}, computer chose ${computer}. You score ${run}.`);
+        }
+        if (m.playerWickets >= 5) startSecondInnings();
+      } else {
+        if (out) {
+          m.computerWickets++;
+          m.log.unshift(`Ball ${m.balls}: You chose ${run}, computer chose ${computer}. Computer OUT.`);
+        } else {
+          m.computerRuns += computer;
+          m.log.unshift(`Ball ${m.balls}: You chose ${run}, computer chose ${computer}. Computer scores ${computer}.`);
+        }
+        if (m.computerRuns >= m.target) endMatch("lost", "Computer chased the target.");
+        else if (m.computerWickets >= 5) endMatch("won", "Computer all out before the target.");
+      }
+      m.log = m.log.slice(0, 24);
+      save();
+      renderMatch();
+    }
+
+    function startSecondInnings() {
+      const m = state.match;
+      m.innings = 2;
+      m.batting = "computer";
+      m.target = m.playerRuns + 1;
+      m.balls = 0;
+      m.log.unshift(`Innings break. Target for computer: ${m.target}.`);
+    }
+
+    function endMatch(result, message) {
+      const m = state.match;
+      if (!m) return;
+      m.active = false;
+      m.result = result;
+      m.log.unshift(message);
+      const previousHigh = state.stats.highestScore || 0;
+      state.stats.matches++;
+      if (result === "won") {
+        state.stats.wins++;
+        state.budget += 10;
+      } else {
+        state.stats.losses++;
+        state.budget += 3;
+      }
+      const best = Math.max(m.playerRuns || 0, m.computerRuns || 0);
+      state.stats.highestScore = Math.max(state.stats.highestScore, best);
+      state.stats.totalRuns += (m.playerRuns || 0) + (m.computerRuns || 0);
+      state.stats.totalWickets += (m.playerWickets || 0) + (m.computerWickets || 0);
+      if (best > previousHigh) {
+        state.budget += 5;
+        m.log.unshift("Highest score bonus unlocked: +5 Cr.");
+      }
+      save();
+    }
+
+    function renderMatch(forcedMessage, tone) {
+      const m = state.match;
+      const buttons = document.querySelectorAll("#runButtons button");
+      const ready = state.playingXI.length === 11;
+      buttons.forEach(b => b.disabled = !ready || !m || !m.active);
+      let notice = forcedMessage || "Pick a number from 1 to 6. Matching the computer means OUT; otherwise the batting side scores.";
+      let noticeClass = "notice";
+      if (tone === "bad") noticeClass += " bad";
+      if (m && m.result === "won") { notice = "You won. Prize added: 10 Cr, plus any highest score bonus."; noticeClass += " good"; }
+      if (m && m.result === "lost") { notice = "You lost. Participation reward added: 3 Cr."; noticeClass += " bad"; }
+      byId("matchNotice").className = noticeClass;
+      byId("matchNotice").textContent = notice;
+      if (!m) {
+        byId("inningsView").textContent = "Ready";
+        byId("scoreView").textContent = "0/0";
+        byId("targetView").textContent = ready ? "Press New Match to begin. You bat first." : "Set exactly 11 players in your Playing XI.";
+        byId("matchLog").innerHTML = `<div class="empty">No balls bowled yet.</div>`;
+        return;
+      }
+      const runs = m.batting === "player" ? m.playerRuns : m.computerRuns;
+      const wickets = m.batting === "player" ? m.playerWickets : m.computerWickets;
+      byId("inningsView").textContent = m.active ? `Innings ${m.innings} • ${m.batting === "player" ? "You Bat" : "Computer Bats"}` : `Match Complete • ${m.result === "won" ? "Win" : "Loss"}`;
+      byId("scoreView").textContent = `${runs}/${wickets}`;
+      byId("targetView").textContent = m.innings === 1 ? `First innings. Five wickets available.` : `Target ${m.target}. Computer needs ${Math.max(0, m.target - m.computerRuns)} more.`;
+      byId("matchLog").innerHTML = (m.log || []).map(x => `<div class="log-entry">${x.replace("OUT", "<strong>OUT</strong>")}</div>`).join("");
+    }
+
+    function renderLeaderboard() {
+      updateLeaderboard();
+      byId("leaders").innerHTML = `
+        ${row("Highest Score", state.leaderboard.highestScore)}
+        ${row("Most Wins", state.leaderboard.mostWins)}
+        ${row("Team Value", crore(state.leaderboard.teamValue))}
+      `;
+      byId("records").innerHTML = `
+        ${row("Current Budget", crore(state.budget))}
+        ${row("Matches Played", state.stats.matches)}
+        ${row("Wins", state.stats.wins)}
+        ${row("Losses", state.stats.losses)}
+        ${row("Total Runs", state.stats.totalRuns)}
+        ${row("Total Wickets", state.stats.totalWickets)}
+      `;
+    }
+
+    function render() {
+      byId("budgetView").textContent = crore(state.budget);
+      renderDashboard();
+      renderAuction();
+      renderSquad();
+      renderMatch();
+      renderLeaderboard();
+    }
+
+    document.querySelectorAll(".nav button").forEach(btn => btn.addEventListener("click", () => setScreen(btn.dataset.screen)));
+    document.querySelectorAll("[data-go]").forEach(btn => btn.addEventListener("click", () => setScreen(btn.dataset.go)));
+    byId("searchBox").addEventListener("input", renderAuction);
+    byId("sortSelect").addEventListener("change", renderAuction);
+    byId("autoXI").addEventListener("click", autoPickXI);
+    byId("newMatch").addEventListener("click", newMatch);
+    byId("forfeitMatch").addEventListener("click", forfeitMatch);
+    document.querySelectorAll("#runButtons button").forEach(btn => btn.addEventListener("click", () => playRun(Number(btn.dataset.run))));
+    byId("resetGame").addEventListener("click", () => {
+      if (confirm("Reset the franchise and clear saved progress?")) {
+        localStorage.removeItem(STORAGE_KEY);
+        state = freshState();
+        render();
+        setScreen("dashboard");
+      }
+    });
+
+    render();
+  </script>
+  <script>
+    const DYNASTY_VERSION = 2;
+    const compareSelection = [];
+    const leagueTeams = ["Your Franchise","Mumbai Meteors","Delhi Kings","Chennai Titans","Kolkata Knights","Bengaluru Blazers","Hyderabad Hawks","Punjab Royals"];
+    const achievementCatalog = [
+      ["first_buy","First Signing","Buy your first player.",5,s => s.squad.length >= 1],
+      ["full_xi","Eleven Ready","Set a full Playing XI.",5,s => s.playingXI.length === 11],
+      ["first_match","Debut Match","Complete one match.",3,s => s.stats.matches >= 1],
+      ["first_win","First Victory","Win your first match.",8,s => s.stats.wins >= 1],
+      ["five_wins","Winning Habit","Win 5 matches.",10,s => s.stats.wins >= 5],
+      ["ten_wins","Dynasty Sparks","Win 10 matches.",15,s => s.stats.wins >= 10],
+      ["twenty_wins","Powerhouse","Win 20 matches.",25,s => s.stats.wins >= 20],
+      ["high_25","Twenty Five Club","Score 25 in an innings.",5,s => s.stats.highestScore >= 25],
+      ["high_50","Half Century","Score 50 in an innings.",12,s => s.stats.highestScore >= 50],
+      ["high_75","Elite Innings","Score 75 in an innings.",18,s => s.stats.highestScore >= 75],
+      ["runs_250","Run Bank","Score 250 total runs.",8,s => s.stats.totalRuns >= 250],
+      ["runs_500","Run Machine","Score 500 total runs.",15,s => s.stats.totalRuns >= 500],
+      ["runs_1000","Thousand Run Club","Score 1000 total runs.",30,s => s.stats.totalRuns >= 1000],
+      ["wkts_25","Wicket Ledger","Take 25 wickets.",8,s => s.stats.totalWickets >= 25],
+      ["wkts_50","Attack Leader","Take 50 wickets.",15,s => s.stats.totalWickets >= 50],
+      ["squad_15","Deep Bench","Own 15 players.",8,s => s.squad.length >= 15],
+      ["squad_20","Mega Squad","Own 20 players.",12,s => s.squad.length >= 20],
+      ["squad_30","Talent Factory","Own 30 players.",22,s => s.squad.length >= 30],
+      ["value_400","Valuable Club","Reach 400 Cr team value.",10,s => teamValue() >= 400],
+      ["value_700","Premium Roster","Reach 700 Cr team value.",18,s => teamValue() >= 700],
+      ["value_1000","Billionaire XI","Reach 1000 Cr team value.",35,s => teamValue() >= 1000],
+      ["budget_500","Cash Reserve","Hold 500 Cr budget.",8,s => s.budget >= 500],
+      ["budget_800","War Chest","Hold 800 Cr budget.",15,s => s.budget >= 800],
+      ["budget_1000","Financial Giant","Hold 1000 Cr budget.",25,s => s.budget >= 1000],
+      ["chem_60","Team Bond","Reach 60 chemistry.",8,s => teamChemistry() >= 60],
+      ["chem_80","United Dressing Room","Reach 80 chemistry.",14,s => teamChemistry() >= 80],
+      ["chem_95","Perfect Chemistry","Reach 95 chemistry.",25,s => teamChemistry() >= 95],
+      ["strength_80","Contender Strength","Reach 80 team strength.",12,s => teamStrength() >= 80],
+      ["strength_90","Title Strength","Reach 90 team strength.",20,s => teamStrength() >= 90],
+      ["captain_named","Captain Appointed","Name a captain.",5,s => !!s.captain],
+      ["vc_named","Deputy Appointed","Name a vice-captain.",5,s => !!s.viceCaptain],
+      ["auction_10","Auction Regular","Buy 10 players.",10,s => s.auctionHistory.length >= 10],
+      ["auction_25","Auction Shark","Buy 25 players.",18,s => s.auctionHistory.length >= 25],
+      ["bargain","Bargain Hunter","Buy a player below base value.",8,s => s.history.some(h => h.includes("below base value"))],
+      ["star_90","Superstar Signed","Own a 90+ rated player.",12,s => ownedPlayers().some(p => p.overall >= 90)],
+      ["three_stars","Star Core","Own three 90+ rated players.",20,s => ownedPlayers().filter(p => p.overall >= 90).length >= 3],
+      ["roles_all","Balanced Roles","Own every role.",10,s => roles.every(r => ownedPlayers().some(p => p.role === r))],
+      ["league_round","League Entrant","Play a league round.",5,s => s.league.round > 0 || s.league.championHistory.length > 0],
+      ["league_top4","Playoff Chase","Reach a top-four league place.",12,s => (s.league.standings || []).some(t => t.name === "Your Franchise" && t.rank <= 4)],
+      ["league_final","Finalist","Reach a league final.",18,s => s.history.some(h => h.includes("reached the final"))],
+      ["champion","Champion","Win a championship.",40,s => s.league.championHistory.some(c => c.champion === "Your Franchise")],
+      ["season_two","Second Season","Start season 2.",15,s => s.league.season >= 2],
+      ["season_three","Established Club","Start season 3.",25,s => s.league.season >= 3],
+      ["exported","Data Steward","Export a save.",5,s => s.saveMeta.exported],
+      ["imported","Comeback Save","Import a save.",5,s => s.saveMeta.imported],
+      ["backup_restore","Safety Net","Restore a backup.",5,s => s.saveMeta.restored],
+      ["no_loss_3","Three Match Streak","Win 3 matches more than losses.",12,s => s.stats.wins - s.stats.losses >= 3],
+      ["no_loss_8","Dominant Record","Win 8 matches more than losses.",22,s => s.stats.wins - s.stats.losses >= 8],
+      ["sell_one","Roster Trimmed","Remove one player.",3,s => s.history.some(h => h.includes("released"))],
+      ["analysis_seen","Analyst Room","Finish a match with post-match analysis.",5,s => s.history.some(h => h.includes("analysis archived"))],
+      ["complete_50","Achievement Collector","Unlock 49 other achievements.",50,s => Object.keys(s.achievements || {}).filter(k => k !== "complete_50").length >= 49]
+    ];
+
+    function defaultPlayerStats() {
+      const out = {};
+      players.forEach(p => out[p.id] = { matches: 0, runs: 0, wickets: 0, catches: 0, boughtFor: 0, sold: 0, form: 50 });
+      return out;
+    }
+
+    function defaultLeague() {
+      return { season: 1, round: 0, maxRounds: 7, standings: leagueTeams.map(name => ({ name, played: 0, wins: 0, losses: 0, points: 0, net: 0, rank: 1 })), playoffs: [], championHistory: [], lastRecap: "" };
+    }
+
+    function migrateDynasty() {
+      const baseStats = defaultPlayerStats();
+      state.version = DYNASTY_VERSION;
+      state.achievements = state.achievements || {};
+      state.playerStats = { ...baseStats, ...(state.playerStats || {}) };
+      state.auctionHistory = Array.isArray(state.auctionHistory) ? state.auctionHistory : [];
+      state.notifications = Array.isArray(state.notifications) ? state.notifications : [];
+      state.history = Array.isArray(state.history) ? state.history : [];
+      state.seasons = state.seasons || { current: 1, matches: 0, wins: 0, losses: 0, recaps: [] };
+      state.league = state.league || defaultLeague();
+      state.league.standings = (state.league.standings && state.league.standings.length) ? state.league.standings : defaultLeague().standings;
+      state.league.maxRounds = state.league.maxRounds || 7;
+      state.market = state.market || { cycle: 1, sentiment: 0 };
+      state.saveMeta = state.saveMeta || { exported: false, imported: false, restored: false, lastSaved: "" };
+      if (state.captain && !state.playingXI.includes(state.captain)) state.captain = "";
+      if (state.viceCaptain && !state.playingXI.includes(state.viceCaptain)) state.viceCaptain = "";
+      rankStandings();
+      persistNow();
+    }
+
+    function persistNow() {
+      updateLeaderboard();
+      state.saveMeta = state.saveMeta || {};
+      state.saveMeta.lastSaved = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY + "Backup", localStorage.getItem(STORAGE_KEY) || "");
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    save = function() {
+      checkAchievements();
+      persistNow();
+    };
+
+    function toast(message) {
+      const stack = byId("toastStack");
+      const item = document.createElement("div");
+      item.className = "toast";
+      item.textContent = message;
+      stack.prepend(item);
+      setTimeout(() => item.remove(), 4200);
+    }
+
+    function addHistory(message) {
+      const stamp = new Date().toLocaleDateString();
+      state.history.unshift(`${stamp}: ${message}`);
+      state.history = state.history.slice(0, 80);
+    }
+
+    function confirmAction(message, onYes) {
+      byId("confirmText").textContent = message;
+      byId("confirmModal").classList.add("active");
+      byId("confirmYes").onclick = () => {
+        byId("confirmModal").classList.remove("active");
+        onYes();
+      };
+      byId("confirmNo").onclick = () => byId("confirmModal").classList.remove("active");
+    }
+
+    function trendFor(p) {
+      const raw = Math.round((seeded(parseInt(p.id.slice(1), 10) + state.market.cycle * 17) - .5) * 30);
+      const scarcity = roleCount(p.role) < 2 ? 8 : 0;
+      return raw + scarcity;
+    }
+
+    function marketPrice(p) {
+      return Math.max(4, Math.round(p.value * (1 + trendFor(p) / 100)));
+    }
+
+    function roleCount(role) {
+      return ownedPlayers().filter(p => p.role === role).length;
+    }
+
+    function teamChemistry() {
+      const xi = state.playingXI.map(playerById).filter(Boolean);
+      if (!xi.length) return 0;
+      const countriesInXI = new Set(xi.map(p => p.country)).size;
+      const roleBalance = roles.filter(r => xi.some(p => p.role === r)).length * 8;
+      const captainBoost = state.captain ? 8 : 0;
+      const deputyBoost = state.viceCaptain ? 4 : 0;
+      const countryBoost = Math.max(0, 24 - countriesInXI * 2);
+      const form = Math.round(xi.reduce((sum, p) => sum + (state.playerStats[p.id]?.form || 50), 0) / xi.length / 5);
+      return Math.max(10, Math.min(100, 35 + roleBalance + countryBoost + captainBoost + deputyBoost + form));
+    }
+
+    function teamStrength() {
+      const xi = state.playingXI.map(playerById).filter(Boolean);
+      if (!xi.length) return 0;
+      const rating = xi.reduce((sum, p) => sum + p.overall, 0) / xi.length;
+      const cap = state.captain ? (playerById(state.captain)?.overall || 0) * .03 : 0;
+      const vice = state.viceCaptain ? (playerById(state.viceCaptain)?.overall || 0) * .015 : 0;
+      return Math.round(Math.min(115, rating + teamChemistry() * .12 + cap + vice));
+    }
+
+    function squadDepth() {
+      return roles.map(role => {
+        const count = roleCount(role);
+        return { role, count, tone: count >= 3 ? "good" : count >= 2 ? "warn" : "bad" };
+      });
+    }
+
+    function checkAchievements() {
+      let unlocked = 0;
+      achievementCatalog.forEach(([id, title, desc, reward, test]) => {
+        if (!state.achievements[id] && test(state)) {
+          state.achievements[id] = { title, desc, reward, date: new Date().toISOString() };
+          state.budget += reward;
+          state.notifications.unshift(`Achievement unlocked: ${title} (+${reward} Cr)`);
+          addHistory(`Achievement unlocked: ${title}. Reward ${reward} Cr.`);
+          toast(`Achievement unlocked: ${title} (+${reward} Cr)`);
+          unlocked++;
+        }
+      });
+      if (unlocked) state.notifications = state.notifications.slice(0, 20);
+    }
+
+    function upgradedPlayerCard(p, mode) {
+      const owned = state.squad.includes(p.id);
+      const selected = state.playingXI.includes(p.id);
+      const price = mode === "auction" ? marketPrice(p) : p.value;
+      const trend = trendFor(p);
+      const el = document.createElement("article");
+      el.className = "player" + (owned ? " owned" : "") + (selected ? " selected" : "");
+      el.innerHTML = `
+        <div class="player-top">
+          <div>
+            <div class="name">${p.name}</div>
+            <div class="meta">${p.country} • ${p.role}</div>
+          </div>
+          <div class="badge" data-tip="Overall rating">${p.overall}</div>
+        </div>
+        <div class="stat-row">
+          <div class="mini-stat"><span>Bat</span><strong>${p.batting}</strong></div>
+          <div class="mini-stat"><span>Bowl</span><strong>${p.bowling}</strong></div>
+          <div class="mini-stat"><span>${mode === "auction" ? "Ask" : "Value"}</span><strong>${price} Cr</strong></div>
+        </div>
+        <div class="pill-row">
+          <span class="pill ${trend < -5 ? "good" : trend > 8 ? "bad" : "warn"}">${trend >= 0 ? "+" : ""}${trend}% market</span>
+          <span class="pill">Form ${state.playerStats[p.id]?.form || 50}</span>
+        </div>
+        <div class="player-actions"></div>
+      `;
+      const actions = el.querySelector(".player-actions");
+      if (mode === "auction") {
+        const btn = document.createElement("button");
+        btn.className = owned ? "ghost small" : "success small";
+        btn.textContent = owned ? "Owned" : "Bid";
+        btn.disabled = owned || state.budget < price;
+        btn.setAttribute("data-tip", owned ? "Already in your squad" : "Buy at current market price");
+        btn.onclick = () => buyPlayer(p.id);
+        const cmp = document.createElement("button");
+        cmp.className = "ghost small";
+        cmp.textContent = "Compare";
+        cmp.onclick = () => addCompare(p.id);
+        actions.append(btn, cmp);
+      } else {
+        const xiBtn = document.createElement("button");
+        xiBtn.className = selected ? "ghost small" : "primary small";
+        xiBtn.textContent = selected ? "Remove from XI" : "Set in XI";
+        xiBtn.onclick = () => toggleXI(p.id);
+        const capBtn = document.createElement("button");
+        capBtn.className = state.captain === p.id ? "success small" : "ghost small";
+        capBtn.textContent = state.captain === p.id ? "Captain" : "Captain";
+        capBtn.disabled = !selected;
+        capBtn.onclick = () => setCaptain(p.id);
+        const vcBtn = document.createElement("button");
+        vcBtn.className = state.viceCaptain === p.id ? "success small" : "ghost small";
+        vcBtn.textContent = state.viceCaptain === p.id ? "Vice" : "Vice";
+        vcBtn.disabled = !selected;
+        vcBtn.onclick = () => setViceCaptain(p.id);
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "danger small";
+        removeBtn.textContent = "Release";
+        removeBtn.onclick = () => removePlayer(p.id);
+        actions.append(xiBtn, capBtn, vcBtn, removeBtn);
+      }
+      return el;
+    }
+
+    playerCard = upgradedPlayerCard;
+
+    buyPlayer = function(id) {
+      const p = playerById(id);
+      if (!p || state.squad.includes(id)) return;
+      const price = marketPrice(p);
+      if (state.budget < price) {
+        toast("Budget too low for this bid.");
+        return;
+      }
+      state.budget -= price;
+      state.squad.push(id);
+      if (state.playingXI.length < 11) state.playingXI.push(id);
+      state.playerStats[id].boughtFor = price;
+      state.auctionHistory.unshift({ id, name: p.name, price, trend: trendFor(p), date: new Date().toISOString() });
+      state.auctionHistory = state.auctionHistory.slice(0, 30);
+      const bargain = price < p.value ? " below base value" : "";
+      addHistory(`Bought ${p.name} for ${price} Cr${bargain}.`);
+      state.notifications.unshift(`${p.name} signed for ${price} Cr.`);
+      save();
+      render();
+    };
+
+    removePlayer = function(id) {
+      const p = playerById(id);
+      if (!p) return;
+      const refund = Math.floor((state.playerStats[id]?.boughtFor || p.value) * 0.45);
+      confirmAction(`Release ${p.name}? You recover ${refund} Cr after contract fees.`, () => {
+        state.squad = state.squad.filter(x => x !== id);
+        state.playingXI = state.playingXI.filter(x => x !== id);
+        if (state.captain === id) state.captain = "";
+        if (state.viceCaptain === id) state.viceCaptain = "";
+        state.playerStats[id].sold++;
+        state.budget += refund;
+        addHistory(`${p.name} released for ${refund} Cr recovery.`);
+        save();
+        render();
+      });
+    };
+
+    function setCaptain(id) {
+      if (!state.playingXI.includes(id)) return;
+      if (state.viceCaptain === id) state.viceCaptain = "";
+      state.captain = id;
+      addHistory(`${playerById(id).name} appointed captain.`);
+      save();
+      render();
+    }
+
+    function setViceCaptain(id) {
+      if (!state.playingXI.includes(id)) return;
+      if (state.captain === id) state.captain = "";
+      state.viceCaptain = id;
+      addHistory(`${playerById(id).name} appointed vice-captain.`);
+      save();
+      render();
+    }
+
+    function addCompare(id) {
+      if (!compareSelection.includes(id)) compareSelection.unshift(id);
+      while (compareSelection.length > 2) compareSelection.pop();
+      renderAuctionExtras();
+    }
+
+    renderAuction = function() {
+      const q = byId("searchBox").value.trim().toLowerCase();
+      const sort = byId("sortSelect").value;
+      let list = players.filter(p => p.name.toLowerCase().includes(q));
+      if (sort === "rating") list.sort((a, b) => b.overall - a.overall);
+      if (sort === "price") list.sort((a, b) => marketPrice(a) - marketPrice(b));
+      if (sort === "name") list.sort((a, b) => a.name.localeCompare(b.name));
+      const wrap = byId("auctionList");
+      wrap.innerHTML = "";
+      list.forEach(p => wrap.appendChild(playerCard(p, "auction")));
+      renderAuctionExtras();
+    };
+
+    function renderAuctionExtras() {
+      const recommended = players.filter(p => !state.squad.includes(p.id) && marketPrice(p) <= state.budget && (roleCount(p.role) < 2 || p.overall >= avgRating() + 6)).sort((a,b) => (b.overall - marketPrice(b) / 4) - (a.overall - marketPrice(a) / 4)).slice(0, 5);
+      byId("recommendedCount").textContent = recommended.length;
+      byId("recommendedTargets").innerHTML = recommended.map(p => `<span class="pill good">${p.name} ${marketPrice(p)} Cr</span>`).join("") || `<span class="pill">No affordable upgrades</span>`;
+      const trends = players.map(trendFor);
+      const avgTrend = Math.round(trends.reduce((a,b) => a + b, 0) / trends.length);
+      byId("marketTrend").textContent = avgTrend > 5 ? "Rising" : avgTrend < -5 ? "Buyer Market" : "Stable";
+      byId("marketMeter").style.width = Math.max(8, Math.min(100, avgTrend + 50)) + "%";
+      byId("auctionAlertCount").textContent = state.notifications.length;
+      byId("auctionAlerts").textContent = state.notifications[0] || "No fresh auction notifications.";
+      byId("auctionHistory").innerHTML = state.auctionHistory.length ? state.auctionHistory.slice(0, 8).map(h => row(h.name, `${h.price} Cr (${h.trend >= 0 ? "+" : ""}${h.trend}%)`)).join("") : `<div class="notice">No bids yet.</div>`;
+      byId("comparePanel").innerHTML = compareSelection.map(id => {
+        const p = playerById(id);
+        return p ? `<div class="info-tile"><span>${p.role}</span><strong>${p.name}</strong><div class="subtitle">OVR ${p.overall} • Bat ${p.batting} • Bowl ${p.bowling} • Ask ${marketPrice(p)} Cr</div></div>` : "";
+      }).join("") || `<div class="notice">Use Compare on two auction cards to inspect value, role, and ratings side by side.</div>`;
+    }
+
+    renderSquad = function() {
+      byId("squadSummary").innerHTML = `
+        ${row("Owned Players", state.squad.length)}
+        ${row("Team Value", crore(teamValue()))}
+        ${row("Average Rating", avgRating())}
+        ${row("Team Strength", teamStrength())}
+        ${row("Chemistry", teamChemistry())}
+        ${row("Playing XI", state.playingXI.length + "/11")}
+      `;
+      byId("managementPanel").innerHTML = `
+        <div class="toolbar-band">
+          <div class="info-tile"><span>Captain</span><strong>${state.captain ? playerById(state.captain).name : "Not Set"}</strong></div>
+          <div class="info-tile"><span>Vice-Captain</span><strong>${state.viceCaptain ? playerById(state.viceCaptain).name : "Not Set"}</strong></div>
+        </div>
+        <div class="pill-row">${squadDepth().map(d => `<span class="pill ${d.tone}">${d.role}: ${d.count}</span>`).join("")}</div>
+      `;
+      byId("xiCount").textContent = state.playingXI.length + " selected";
+      const xi = byId("xiGrid");
+      xi.innerHTML = "";
+      for (let i = 0; i < 11; i++) {
+        const p = playerById(state.playingXI[i]);
+        const slot = document.createElement("div");
+        slot.className = "xi-slot";
+        const tag = p && state.captain === p.id ? " • C" : p && state.viceCaptain === p.id ? " • VC" : "";
+        slot.innerHTML = p ? `<strong>${i + 1}. ${p.name}${tag}</strong><span>${p.role} • OVR ${p.overall} • Form ${state.playerStats[p.id]?.form || 50}</span>` : `<strong>${i + 1}. Empty Slot</strong><span>Select a player below</span>`;
+        xi.appendChild(slot);
+      }
+      const wrap = byId("squadList");
+      wrap.innerHTML = "";
+      const squad = ownedPlayers().sort((a, b) => b.overall - a.overall);
+      if (!squad.length) {
+        wrap.innerHTML = `<div class="empty">No players yet. Visit the auction and start building your franchise.</div>`;
+      } else {
+        squad.forEach(p => wrap.appendChild(playerCard(p, "squad")));
+      }
+    };
+
+    function aiNumber(m) {
+      const pressure = m.innings === 2 ? Math.max(1, m.target - m.computerRuns) : 20;
+      const strengthGap = teamStrength() - 78;
+      if (m.batting === "computer") {
+        if (pressure <= 8 && m.computerWickets < 4) return 4 + Math.floor(Math.random() * 3);
+        if (m.momentum < 42) return 1 + Math.floor(Math.random() * 3);
+        return 1 + Math.floor(Math.random() * 6);
+      }
+      const smartChance = Math.max(.18, Math.min(.46, .32 - strengthGap / 200 + (50 - m.momentum) / 180));
+      return Math.random() < smartChance ? m.lastPlayerRun || (1 + Math.floor(Math.random() * 6)) : 1 + Math.floor(Math.random() * 6);
+    }
+
+    newMatch = function() {
+      if (state.playingXI.length !== 11) {
+        state.match = null;
+        save();
+        renderMatch("Select exactly 11 players before starting a match.", "bad");
+        return;
+      }
+      state.match = {
+        active: true,
+        innings: 1,
+        batting: "player",
+        playerRuns: 0,
+        playerWickets: 0,
+        computerRuns: 0,
+        computerWickets: 0,
+        target: null,
+        balls: 0,
+        momentum: Math.min(68, Math.max(40, 46 + Math.round((teamStrength() - 75) / 3))),
+        lastPlayerRun: 3,
+        scorecard: [],
+        highlights: ["Toss won. Your franchise bats first."],
+        analysis: "",
+        log: ["Match started. You bat first."]
+      };
+      save();
+      renderMatch();
+    };
+
+    playRun = function(run) {
+      const m = state.match;
+      if (!m || !m.active) return;
+      const computer = aiNumber(m);
+      m.balls += 1;
+      const out = run === computer;
+      let text = "";
+      if (m.batting === "player") {
+        m.lastPlayerRun = run;
+        if (out) {
+          m.playerWickets++;
+          m.momentum = Math.max(0, m.momentum - 12);
+          text = `Ball ${m.balls}: You chose ${run}, computer read it with ${computer}. OUT.`;
+          m.highlights.unshift(`Wicket ${m.playerWickets}: pressure swings to the computer.`);
+        } else {
+          m.playerRuns += run;
+          m.momentum = Math.min(100, m.momentum + run + (run >= 5 ? 4 : 0));
+          text = `Ball ${m.balls}: You chose ${run}, computer chose ${computer}. ${run} runs.`;
+          if (run >= 5) m.highlights.unshift(`Big hit for ${run}. Momentum rises.`);
+        }
+        m.scorecard.push({ innings: 1, ball: m.balls, user: run, ai: computer, event: out ? "W" : run, score: `${m.playerRuns}/${m.playerWickets}`, momentum: m.momentum });
+        if (m.playerWickets >= 5) startSecondInnings();
+      } else {
+        if (out) {
+          m.computerWickets++;
+          m.momentum = Math.min(100, m.momentum + 10);
+          text = `Ball ${m.balls}: You bowled ${run}, computer played ${computer}. Computer OUT.`;
+          m.highlights.unshift(`Breakthrough: computer ${m.computerRuns}/${m.computerWickets}.`);
+        } else {
+          m.computerRuns += computer;
+          m.momentum = Math.max(0, m.momentum - computer - (computer >= 5 ? 4 : 0));
+          text = `Ball ${m.balls}: You bowled ${run}, computer played ${computer}. Computer scores ${computer}.`;
+          if (computer >= 5) m.highlights.unshift(`Computer lands a ${computer}. Chase pressure drops.`);
+        }
+        m.scorecard.push({ innings: 2, ball: m.balls, user: run, ai: computer, event: out ? "W" : computer, score: `${m.computerRuns}/${m.computerWickets}`, momentum: m.momentum });
+        if (m.computerRuns >= m.target) endMatch("lost", "Computer chased the target.");
+        else if (m.computerWickets >= 5) endMatch("won", "Computer all out before the target.");
+      }
+      m.log.unshift(text);
+      m.log = m.log.slice(0, 30);
+      m.highlights = m.highlights.slice(0, 8);
+      save();
+      renderMatch();
+    };
+
+    startSecondInnings = function() {
+      const m = state.match;
+      m.innings = 2;
+      m.batting = "computer";
+      m.target = m.playerRuns + 1;
+      m.balls = 0;
+      m.momentum = Math.min(100, Math.max(25, m.momentum + Math.round((m.playerRuns - 25) / 2)));
+      m.highlights.unshift(`Target set: ${m.target}. Chemistry ${teamChemistry()} keeps the field sharp.`);
+      m.log.unshift(`Innings break. Target for computer: ${m.target}.`);
+    };
+
+    endMatch = function(result, message) {
+      const m = state.match;
+      if (!m || !m.active) return;
+      const previousHigh = state.stats.highestScore || 0;
+      m.active = false;
+      m.result = result;
+      m.log.unshift(message);
+      state.stats.matches++;
+      state.seasons.matches++;
+      if (result === "won") {
+        state.stats.wins++;
+        state.seasons.wins++;
+        state.budget += 8;
+      } else {
+        state.stats.losses++;
+        state.seasons.losses++;
+        state.budget += 2;
+      }
+      const best = Math.max(m.playerRuns || 0, m.computerRuns || 0);
+      state.stats.highestScore = Math.max(state.stats.highestScore, best);
+      state.stats.totalRuns += (m.playerRuns || 0) + (m.computerRuns || 0);
+      state.stats.totalWickets += (m.playerWickets || 0) + (m.computerWickets || 0);
+      if (best > previousHigh) {
+        state.budget += 5;
+        m.log.unshift("Highest score bonus unlocked: +5 Cr.");
+      }
+      updatePlayerStatsFromMatch(m);
+      m.analysis = buildAnalysis(m);
+      addHistory(`Match ${result === "won" ? "won" : "lost"}: ${m.playerRuns}/${m.playerWickets} vs ${m.computerRuns}/${m.computerWickets}; analysis archived.`);
+      save();
+    };
+
+    function updatePlayerStatsFromMatch(m) {
+      const xi = state.playingXI.map(playerById).filter(Boolean);
+      if (!xi.length) return;
+      xi.forEach(p => state.playerStats[p.id].matches++);
+      let runsLeft = m.playerRuns;
+      xi.slice(0, 5).forEach((p, idx) => {
+        const share = idx === 4 ? runsLeft : Math.min(runsLeft, Math.round(m.playerRuns * (seeded(idx + m.playerRuns + 9) * .28 + .08)));
+        state.playerStats[p.id].runs += Math.max(0, share);
+        runsLeft -= Math.max(0, share);
+      });
+      let wicketsLeft = m.computerWickets;
+      xi.filter(p => ["Spinner","Fast Bowler","All-Rounder"].includes(p.role)).slice(0, 5).forEach((p, idx, arr) => {
+        const wk = idx === arr.length - 1 ? wicketsLeft : Math.min(wicketsLeft, Math.round(seeded(idx + m.computerWickets + 41) * wicketsLeft));
+        state.playerStats[p.id].wickets += Math.max(0, wk);
+        wicketsLeft -= Math.max(0, wk);
+      });
+      xi.forEach(p => {
+        const st = state.playerStats[p.id];
+        st.form = Math.max(20, Math.min(99, st.form + (m.result === "won" ? 3 : -2) + (p.id === state.captain ? 1 : 0)));
+      });
+    }
+
+    function buildAnalysis(m) {
+      const notes = [];
+      notes.push(m.result === "won" ? "Defensive reads were strong in the chase." : "The computer handled pressure better in the chase.");
+      if (m.momentum >= 60) notes.push("Momentum finished in your favour.");
+      if (teamChemistry() < 60) notes.push("Chemistry is limiting close-match consistency.");
+      if (!state.captain || !state.viceCaptain) notes.push("Leadership roles can add a small but meaningful strength boost.");
+      return notes.join(" ");
+    }
+
+    renderMatch = function(forcedMessage, tone) {
+      const m = state.match;
+      const buttons = document.querySelectorAll("#runButtons button");
+      const ready = state.playingXI.length === 11;
+      buttons.forEach(b => b.disabled = !ready || !m || !m.active);
+      let notice = forcedMessage || "Pick 1 to 6. Batting side scores on a non-match; matching numbers mean OUT. AI adapts to form, target pressure, and momentum.";
+      let noticeClass = "notice";
+      if (tone === "bad") noticeClass += " bad";
+      if (m && m.result === "won") { notice = "You won. Prize added: 8 Cr, plus record and achievement rewards."; noticeClass += " good"; }
+      if (m && m.result === "lost") { notice = "You lost. Participation reward added: 2 Cr."; noticeClass += " bad"; }
+      byId("matchNotice").className = noticeClass;
+      byId("matchNotice").textContent = notice;
+      if (!m) {
+        byId("inningsView").textContent = "Ready";
+        byId("scoreView").textContent = "0/0";
+        byId("targetView").textContent = ready ? "Press New Match to begin. You bat first." : "Set exactly 11 players in your Playing XI.";
+        byId("matchLog").innerHTML = `<div class="empty">No balls bowled yet.</div>`;
+        byId("momentumPanel").innerHTML = `<div class="notice">Momentum appears once a match starts.</div>`;
+        byId("highlightsPanel").innerHTML = `<div class="notice">Highlights will be collected live.</div>`;
+        byId("analysisPanel").innerHTML = `<div class="notice">Post-match analysis unlocks after the result.</div>`;
+        byId("scorecardPanel").innerHTML = `<div class="notice">No scorecard yet.</div>`;
+        return;
+      }
+      const runs = m.batting === "player" ? m.playerRuns : m.computerRuns;
+      const wickets = m.batting === "player" ? m.playerWickets : m.computerWickets;
+      byId("inningsView").textContent = m.active ? `Innings ${m.innings} • ${m.batting === "player" ? "You Bat" : "Computer Bats"}` : `Match Complete • ${m.result === "won" ? "Win" : "Loss"}`;
+      byId("scoreView").textContent = `${runs}/${wickets}`;
+      byId("targetView").textContent = m.innings === 1 ? `First innings. Five wickets available. Strength ${teamStrength()}, Chemistry ${teamChemistry()}.` : `Target ${m.target}. Computer needs ${Math.max(0, m.target - m.computerRuns)} more.`;
+      byId("matchLog").innerHTML = (m.log || []).map(x => `<div class="log-entry">${x.replace("OUT", "<strong>OUT</strong>")}</div>`).join("");
+      byId("momentumPanel").innerHTML = `<div class="info-tile"><span>Momentum</span><strong>${m.momentum}</strong><div class="meter"><i style="width:${m.momentum}%"></i></div></div>`;
+      byId("highlightsPanel").innerHTML = (m.highlights || []).map(h => `<div class="log-entry">${h}</div>`).join("") || `<div class="notice">No highlights yet.</div>`;
+      byId("analysisPanel").innerHTML = m.analysis ? `<div class="notice good">${m.analysis}</div>` : `<div class="notice">Analysis arrives after the final wicket or chase.</div>`;
+      byId("scorecardPanel").innerHTML = m.scorecard && m.scorecard.length ? `<div class="table-wrap"><table><thead><tr><th>Inn</th><th>Ball</th><th>You</th><th>AI</th><th>Event</th><th>Score</th><th>Mom</th></tr></thead><tbody>${m.scorecard.slice(-18).reverse().map(b => `<tr><td>${b.innings}</td><td>${b.ball}</td><td>${b.user}</td><td>${b.ai}</td><td>${b.event}</td><td>${b.score}</td><td>${b.momentum}</td></tr>`).join("")}</tbody></table></div>` : `<div class="notice">No scorecard yet.</div>`;
+    };
+
+    function rankStandings() {
+      state.league.standings.sort((a,b) => b.points - a.points || b.net - a.net || b.wins - a.wins);
+      state.league.standings.forEach((t, i) => t.rank = i + 1);
+    }
+
+    function playLeagueRound() {
+      const l = state.league;
+      if (l.round >= l.maxRounds) return runPlayoffs();
+      l.round++;
+      state.market.cycle++;
+      l.standings.forEach(team => {
+        const isUser = team.name === "Your Franchise";
+        const power = isUser ? teamStrength() : 68 + Math.round(seeded(l.season * 40 + l.round + team.name.length) * 28);
+        const opp = 70 + Math.round(seeded(l.season * 31 + l.round + team.name.charCodeAt(0)) * 26);
+        const won = power + Math.random() * 18 > opp + Math.random() * 18;
+        team.played++;
+        if (won) { team.wins++; team.points += 2; team.net += Math.round((power - opp) / 5 + 2); }
+        else { team.losses++; team.net -= Math.round((opp - power) / 5 + 1); }
+      });
+      rankStandings();
+      addHistory(`League season ${l.season}, round ${l.round} completed.`);
+      save();
+      render();
+    }
+
+    function runPlayoffs() {
+      const l = state.league;
+      rankStandings();
+      const top = l.standings.slice(0, 4).map(t => t.name);
+      if (!top.includes("Your Franchise")) {
+        l.lastRecap = `Season ${l.season}: missed playoffs. Champion: ${top[0]}.`;
+        l.championHistory.unshift({ season: l.season, champion: top[0] });
+        resetLeagueSeason();
+        save();
+        render();
+        return;
+      }
+      const userPower = teamStrength() + Math.random() * 18;
+      const semiWon = userPower > 78 + Math.random() * 20;
+      if (!semiWon) {
+        l.lastRecap = `Season ${l.season}: reached playoffs but lost the semi-final.`;
+        l.championHistory.unshift({ season: l.season, champion: top.find(t => t !== "Your Franchise") || top[0] });
+        resetLeagueSeason();
+      } else {
+        addHistory(`Your Franchise reached the final in season ${l.season}.`);
+        const finalWon = userPower + teamChemistry() / 10 > 84 + Math.random() * 24;
+        const champion = finalWon ? "Your Franchise" : (top.find(t => t !== "Your Franchise") || "Mumbai Meteors");
+        if (finalWon) state.budget += 35;
+        l.lastRecap = finalWon ? `Season ${l.season}: champions. Prize money 35 Cr.` : `Season ${l.season}: finalists, but lost the championship match.`;
+        l.championHistory.unshift({ season: l.season, champion });
+        resetLeagueSeason();
+      }
+      save();
+      render();
+    }
+
+    function resetLeagueSeason() {
+      const history = state.league.championHistory;
+      const recap = state.league.lastRecap;
+      state.league = defaultLeague();
+      state.league.season = (history[0]?.season || 1) + 1;
+      state.league.championHistory = history.slice(0, 12);
+      state.league.lastRecap = recap;
+      state.seasons.recaps.unshift(recap);
+      state.seasons.current = state.league.season;
+    }
+
+    function renderLeague() {
+      const l = state.league;
+      rankStandings();
+      const user = l.standings.find(t => t.name === "Your Franchise");
+      byId("leagueSummary").innerHTML = `
+        ${row("Season", l.season)}
+        ${row("Round", `${l.round}/${l.maxRounds}`)}
+        ${row("Your Rank", user ? user.rank : "-")}
+        ${row("Team Strength", teamStrength())}
+      `;
+      byId("standingsTable").innerHTML = `<table><thead><tr><th>Rank</th><th>Team</th><th>P</th><th>W</th><th>L</th><th>Pts</th><th>Net</th></tr></thead><tbody>${l.standings.map(t => `<tr><td>${t.rank}</td><td>${t.name}</td><td>${t.played}</td><td>${t.wins}</td><td>${t.losses}</td><td>${t.points}</td><td>${t.net}</td></tr>`).join("")}</tbody></table>`;
+      byId("playoffPanel").innerHTML = l.round >= l.maxRounds ? `<div class="notice good">Regular season complete. Press Play Round to run playoffs.</div>` : `<div class="notice">Top four qualify after round ${l.maxRounds}. Chemistry and strength influence playoff odds.</div>`;
+      byId("championshipHistory").innerHTML = l.championHistory.length ? l.championHistory.map(c => row(`Season ${c.season}`, c.champion)).join("") : `<div class="notice">No champions crowned yet.</div>`;
+    }
+
+    function renderAchievements() {
+      const unlocked = Object.keys(state.achievements || {}).length;
+      byId("achievementSummary").textContent = `${unlocked}/${achievementCatalog.length} unlocked`;
+      byId("achievementGrid").innerHTML = achievementCatalog.map(([id, title, desc, reward]) => {
+        const got = state.achievements[id];
+        return `<div class="achievement ${got ? "unlocked" : "locked"}"><div class="pill-row"><span class="pill ${got ? "good" : "warn"}">${got ? "Unlocked" : "Locked"}</span><span class="pill">+${reward} Cr</span></div><h3 style="margin-top:10px">${title}</h3><div class="subtitle">${desc}</div></div>`;
+      }).join("");
+    }
+
+    function renderHistory() {
+      byId("franchiseHistory").innerHTML = state.history.length ? state.history.slice(0, 20).map(h => `<div class="log-entry">${h}</div>`).join("") : `<div class="notice">Your franchise story begins with the first signing.</div>`;
+      byId("seasonRecaps").innerHTML = state.seasons.recaps && state.seasons.recaps.length ? state.seasons.recaps.slice(0, 10).map(r => `<div class="log-entry">${r}</div>`).join("") : `<div class="notice">No completed seasons yet.</div>`;
+      const rows = ownedPlayers().map(p => ({ p, st: state.playerStats[p.id] })).sort((a,b) => b.st.runs - a.st.runs || b.st.wickets - a.st.wickets);
+      byId("playerStatsTable").innerHTML = rows.length ? `<table><thead><tr><th>Player</th><th>Role</th><th>M</th><th>Runs</th><th>Wkts</th><th>Form</th><th>Bought</th></tr></thead><tbody>${rows.map(({p,st}) => `<tr><td>${p.name}</td><td>${p.role}</td><td>${st.matches}</td><td>${st.runs}</td><td>${st.wickets}</td><td>${st.form}</td><td>${st.boughtFor || p.value} Cr</td></tr>`).join("")}</tbody></table>` : `<div class="notice">Buy players to build statistical history.</div>`;
+    }
+
+    function renderSaveTools() {
+      if (!byId("saveText").value) byId("saveText").placeholder = "Exported save data appears here.";
+    }
+
+    function wireEnhancedButtons() {
+      ["newMatch","forfeitMatch","resetGame"].forEach(id => {
+        const old = byId(id);
+        const clone = old.cloneNode(true);
+        old.replaceWith(clone);
+      });
+      byId("newMatch").addEventListener("click", newMatch);
+      byId("forfeitMatch").addEventListener("click", () => {
+        if (state.match && state.match.active) confirmAction("Forfeit this match? You will receive only the loss reward.", () => endMatch("lost", "Match forfeited."));
+      });
+      byId("resetGame").addEventListener("click", () => confirmAction("Reset franchise progress, including league, achievements, and history?", () => {
+        localStorage.removeItem(STORAGE_KEY);
+        state = load();
+        migrateDynasty();
+        render();
+        setScreen("dashboard");
+      }));
+      byId("playLeagueRound").addEventListener("click", playLeagueRound);
+      byId("exportSave").addEventListener("click", () => {
+        state.saveMeta.exported = true;
+        checkAchievements();
+        persistNow();
+        byId("saveText").value = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+        toast("Save exported.");
+        render();
+      });
+      byId("copySave").addEventListener("click", () => {
+        byId("saveText").select();
+        document.execCommand("copy");
+        toast("Export text copied.");
+      });
+      byId("importSave").addEventListener("click", () => confirmAction("Import save data from the text box and replace current progress?", () => {
+        try {
+          const imported = JSON.parse(decodeURIComponent(escape(atob(byId("saveText").value.trim()))));
+          state = imported;
+          state.saveMeta = state.saveMeta || {};
+          state.saveMeta.imported = true;
+          migrateDynasty();
+          toast("Save imported.");
+          render();
+        } catch (e) {
+          toast("Import failed. Check the save text.");
+        }
+      }));
+      byId("restoreBackup").addEventListener("click", () => confirmAction("Restore the automatic backup save?", () => {
+        const backup = localStorage.getItem(STORAGE_KEY + "Backup");
+        if (!backup) { toast("No backup save found."); return; }
+        state = JSON.parse(backup);
+        state.saveMeta = state.saveMeta || {};
+        state.saveMeta.restored = true;
+        migrateDynasty();
+        toast("Backup restored.");
+        render();
+      }));
+    }
+
+    const baseRender = render;
+    render = function() {
+      baseRender();
+      renderLeague();
+      renderAchievements();
+      renderHistory();
+      renderSaveTools();
+    };
+
+    migrateDynasty();
+    wireEnhancedButtons();
+    render();
+    setTimeout(() => byId("loader").classList.add("hidden"), 250);
+  </script>
+  <script>
+    const DYNASTY_V3 = 3;
+    const aiFranchises = ["Mumbai Meteors","Delhi Kings","Chennai Titans","Kolkata Knights","Bengaluru Blazers","Hyderabad Hawks","Punjab Royals"];
+    const rivalries = ["Mumbai Meteors","Chennai Titans","Delhi Kings"];
+    const extraAchievements = [
+      ["m_25","Seasoned Manager","Complete 25 matches.",20,s => s.stats.matches >= 25],
+      ["m_50","Fixture Veteran","Complete 50 matches.",35,s => s.stats.matches >= 50],
+      ["m_100","Century of Fixtures","Complete 100 matches.",60,s => s.stats.matches >= 100],
+      ["auction_watch","Scout Network","Add a player to the watchlist.",5,s => (s.watchlist || []).length > 0],
+      ["auction_compete","Bidding War","Win a signing after AI competition.",8,s => s.auctionHistory.some(h => h.aiBid)],
+      ["auction_clock","Market Timer","Let the auction clock refresh once.",5,s => s.market && s.market.refreshes >= 1],
+      ["best_deal","Best Deal Closed","Buy one of the best deals.",10,s => s.history.some(h => h.includes("best deal"))],
+      ["watch_5","Sharp Watchlist","Track 5 players.",10,s => (s.watchlist || []).length >= 5],
+      ["morale_70","Happy Camp","Reach 70 morale.",8,s => moraleScore() >= 70],
+      ["morale_90","Buzzing Camp","Reach 90 morale.",18,s => moraleScore() >= 90],
+      ["rep_50","Known Brand","Reach 50 reputation.",10,s => reputationScore() >= 50],
+      ["rep_80","Global Brand","Reach 80 reputation.",22,s => reputationScore() >= 80],
+      ["crowd_90","Crowd Eruption","Reach 90 crowd excitement.",10,s => s.history.some(h => h.includes("crowd peaked above 90"))],
+      ["clutch_win","Clutch Finish","Win under high pressure.",15,s => s.history.some(h => h.includes("clutch finish"))],
+      ["rookie_signed","Rookie Bet","Sign a rookie.",10,s => ownedPlayers().some(p => p.rookie)],
+      ["develop_5","Development Track","Improve 5 player ratings through seasons.",15,s => (s.career.developmentEvents || 0) >= 5],
+      ["retirement_seen","End of an Era","Have a player retire.",12,s => (s.career.retirements || []).length > 0],
+      ["age_mix","Age Balance","Own young, prime, and veteran players.",10,s => ownedPlayers().some(p => p.age <= 23) && ownedPlayers().some(p => p.age >= 32) && ownedPlayers().some(p => p.age > 23 && p.age < 32)],
+      ["mvp_one","MVP Winner","Win a player MVP award.",16,s => Object.values(s.playerStats || {}).some(st => st.mvp >= 1)],
+      ["mvp_three","MVP Culture","Collect 3 MVP awards.",28,s => Object.values(s.playerStats || {}).reduce((a,st) => a + (st.mvp || 0), 0) >= 3],
+      ["sr_150","Fast Scorers","Have a player reach 150 strike rate.",10,s => Object.values(s.playerStats || {}).some(st => strikeRate(st) >= 150 && st.balls >= 10)],
+      ["avg_25","Reliable Batter","Have a player reach 25 batting average.",12,s => Object.values(s.playerStats || {}).some(st => battingAverage(st) >= 25 && st.outs >= 2)],
+      ["division_promoted","Promotion Party","Earn promotion.",25,s => s.league.awards && s.league.awards.some(a => a.includes("Promoted"))],
+      ["division_survive","Top Flight Survival","Stay in Division One.",14,s => s.league.division === 1 && s.league.season >= 2],
+      ["rival_win","Rivalry Statement","Win a rivalry round.",12,s => s.history.some(h => h.includes("rivalry win"))],
+      ["award_sweep","Awards Night","Win a season award.",15,s => s.league.awards && s.league.awards.length > 0],
+      ["all_time_100","Record Keeper","Set an all-time score record of 100.",35,s => s.records && s.records.highestInnings >= 100],
+      ["tutorial_done","Tutorial Graduate","Complete tutorial mode.",5,s => s.tutorial && s.tutorial.done],
+      ["shortcut_used","Hotkey Captain","Use a keyboard shortcut.",5,s => s.qol && s.qol.shortcutUsed],
+      ["recovery_ready","Recovery Ready","Create a recovery save.",5,s => s.saveMeta && s.saveMeta.recoveryCreated]
+    ];
+
+    extraAchievements.forEach(item => {
+      if (!achievementCatalog.some(existing => existing[0] === item[0])) achievementCatalog.push(item);
+    });
+
+    function ensureV3State() {
+      state.version = DYNASTY_V3;
+      state.watchlist = Array.isArray(state.watchlist) ? state.watchlist : [];
+      state.career = state.career || { year: 1, developmentEvents: 0, retirements: [], rookiesGenerated: 0 };
+      state.records = state.records || { highestInnings: state.stats.highestScore || 0, bestTeamValue: teamValue(), seasonBest: 0, allTimeMVP: "" };
+      state.qol = state.qol || { tutorial: true, shortcutUsed: false };
+      state.tutorial = state.tutorial || { step: 0, done: false };
+      state.market.refreshes = state.market.refreshes || 0;
+      state.market.clock = Number.isFinite(state.market.clock) ? state.market.clock : 30;
+      state.saveMeta.recoveryCreated = state.saveMeta.recoveryCreated || false;
+      state.league.division = state.league.division || 2;
+      state.league.divisions = state.league.divisions || {
+        one: ["Your Franchise","Mumbai Meteors","Chennai Titans","Kolkata Knights"],
+        two: ["Delhi Kings","Bengaluru Blazers","Hyderabad Hawks","Punjab Royals"]
+      };
+      state.league.rivals = state.league.rivals || rivalries;
+      state.league.awards = Array.isArray(state.league.awards) ? state.league.awards : [];
+      players.forEach((p, index) => {
+        if (!p.age) p.age = 19 + Math.floor(seeded(index + 902) * 18);
+        if (!p.potential) p.potential = Math.min(99, p.overall + 3 + Math.floor(seeded(index + 903) * 12));
+        if (!p.trait) p.trait = ["Clutch","Anchor","Finisher","Swing King","Mystery Spin","Calm Head"][index % 6];
+        if (!state.playerStats[p.id]) state.playerStats[p.id] = { matches: 0, runs: 0, wickets: 0, catches: 0, boughtFor: 0, sold: 0, form: 50 };
+        const st = state.playerStats[p.id];
+        st.balls = st.balls || Math.max(0, Math.round(st.runs * .72));
+        st.outs = st.outs || Math.max(1, Math.floor(st.matches / 2));
+        st.mvp = st.mvp || 0;
+        st.seasonRuns = st.seasonRuns || 0;
+        st.seasonWickets = st.seasonWickets || 0;
+      });
+      restoreRookies();
+      persistNow();
+    }
+
+    function restoreRookies() {
+      state.rookies = Array.isArray(state.rookies) ? state.rookies : [];
+      state.rookies.forEach(r => {
+        if (!players.some(p => p.id === r.id)) players.push(r);
+        if (!state.playerStats[r.id]) state.playerStats[r.id] = { matches: 0, runs: 0, wickets: 0, catches: 0, boughtFor: 0, sold: 0, form: 55, balls: 0, outs: 1, mvp: 0, seasonRuns: 0, seasonWickets: 0 };
+      });
+    }
+
+    function moraleScore() {
+      const form = ownedPlayers().reduce((sum, p) => sum + (state.playerStats[p.id]?.form || 50), 0) / Math.max(1, state.squad.length);
+      return Math.round(Math.max(10, Math.min(100, form + state.stats.wins * 1.2 - state.stats.losses * .8 + (state.captain ? 4 : 0))));
+    }
+
+    function reputationScore() {
+      return Math.round(Math.min(100, 18 + state.stats.wins * 2.4 + (state.league.championHistory || []).filter(c => c.champion === "Your Franchise").length * 18 + teamValue() / 35 + Object.keys(state.achievements || {}).length / 3));
+    }
+
+    function strikeRate(st) {
+      return st.balls ? Math.round(st.runs / st.balls * 100) : 0;
+    }
+
+    function battingAverage(st) {
+      return st.outs ? Math.round(st.runs / st.outs * 10) / 10 : st.runs;
+    }
+
+    function bestDeals() {
+      return players
+        .filter(p => !state.squad.includes(p.id) && marketPrice(p) <= state.budget)
+        .map(p => ({ p, price: marketPrice(p), score: p.overall + (p.potential || p.overall) / 3 - marketPrice(p) / 2 - Math.max(0, trendFor(p)) / 3 }))
+        .sort((a,b) => b.score - a.score)
+        .slice(0, 6);
+    }
+
+    function emitParticles(kind) {
+      const layer = byId("particleLayer");
+      const colors = kind === "win" ? ["#f7c948","#4ade80","#38bdf8"] : ["#f7c948","#fb923c","#fff7ad"];
+      for (let i = 0; i < 34; i++) {
+        const dot = document.createElement("i");
+        dot.className = "particle";
+        dot.style.left = (50 + (Math.random() - .5) * 36) + "vw";
+        dot.style.top = (kind === "six" ? 42 : 52) + "vh";
+        dot.style.color = colors[i % colors.length];
+        dot.style.background = colors[i % colors.length];
+        dot.style.setProperty("--tx", ((Math.random() - .5) * 520) + "px");
+        dot.style.setProperty("--ty", ((Math.random() - .8) * 420) + "px");
+        layer.appendChild(dot);
+        setTimeout(() => dot.remove(), 950);
+      }
+    }
+
+    function applyTheme() {
+      const phase = state.qol.theme || (Math.floor(Date.now() / 45000) % 2 ? "night" : "day");
+      document.body.classList.toggle("theme-day", phase === "day");
+      document.body.classList.toggle("theme-night", phase === "night");
+    }
+
+    const priorPersistNow = persistNow;
+    persistNow = function() {
+      state.records = state.records || {};
+      state.records.highestInnings = Math.max(state.records.highestInnings || 0, state.stats.highestScore || 0);
+      state.records.bestTeamValue = Math.max(state.records.bestTeamValue || 0, teamValue());
+      state.saveMeta.recoveryCreated = true;
+      localStorage.setItem(STORAGE_KEY + "Recovery", JSON.stringify(state));
+      priorPersistNow();
+    };
+
+    const priorTeamChemistry = teamChemistry;
+    teamChemistry = function() {
+      return Math.round(Math.min(100, priorTeamChemistry() * .82 + moraleScore() * .18));
+    };
+
+    const priorTeamStrength = teamStrength;
+    teamStrength = function() {
+      const xi = state.playingXI.map(playerById).filter(Boolean);
+      const traitBoost = xi.filter(p => p.trait === "Clutch" || p.trait === "Calm Head").length * .6;
+      return Math.round(Math.min(120, priorTeamStrength() + moraleScore() * .04 + reputationScore() * .025 + traitBoost));
+    };
+
+    function aiAuctionBid(p) {
+      const demand = p.overall + (p.potential || p.overall) / 2 + trendFor(p) + reputationScore() / 8;
+      if (demand < 112 && Math.random() > .32) return null;
+      const rival = aiFranchises[Math.floor(Math.random() * aiFranchises.length)];
+      const bid = Math.max(marketPrice(p), Math.round(marketPrice(p) * (1.04 + Math.random() * .22)));
+      return { rival, bid };
+    }
+
+    buyPlayer = function(id) {
+      const p = playerById(id);
+      if (!p || state.squad.includes(id)) return;
+      const base = marketPrice(p);
+      const competition = aiAuctionBid(p);
+      const finalPrice = competition ? Math.min(Math.round(base * 1.35), competition.bid + 1) : base;
+      if (state.budget < finalPrice) {
+        toast(competition ? `${competition.rival} pushed ${p.name} to ${finalPrice} Cr. Budget too low.` : "Budget too low for this bid.");
+        return;
+      }
+      state.budget -= finalPrice;
+      state.squad.push(id);
+      if (state.playingXI.length < 11) state.playingXI.push(id);
+      if (!state.playerStats[id]) state.playerStats[id] = { matches: 0, runs: 0, wickets: 0, catches: 0, boughtFor: 0, sold: 0, form: 50, balls: 0, outs: 1, mvp: 0, seasonRuns: 0, seasonWickets: 0 };
+      state.playerStats[id].boughtFor = finalPrice;
+      const isDeal = bestDeals().some(d => d.p.id === id);
+      state.auctionHistory.unshift({ id, name: p.name, price: finalPrice, base, trend: trendFor(p), aiBid: competition, date: new Date().toISOString() });
+      state.auctionHistory = state.auctionHistory.slice(0, 40);
+      if (state.watchlist.includes(id)) state.watchlist = state.watchlist.filter(x => x !== id);
+      addHistory(`Bought ${p.name} for ${finalPrice} Cr${competition ? ` after beating ${competition.rival}` : ""}${isDeal ? " as a best deal" : ""}.`);
+      state.notifications.unshift(competition ? `Bidding war won: ${p.name} over ${competition.rival}.` : `${p.name} signed for ${finalPrice} Cr.`);
+      save();
+      render();
+    };
+
+    function toggleWatchlist(id) {
+      if (state.watchlist.includes(id)) state.watchlist = state.watchlist.filter(x => x !== id);
+      else state.watchlist.push(id);
+      save();
+      render();
+    }
+
+    function openCompare(ids) {
+      const chosen = ids.map(playerById).filter(Boolean);
+      byId("compareModalBody").innerHTML = `<div class="compare-grid">${chosen.map(p => `<div class="info-tile premium-glow"><span>${p.country} ${p.role}</span><strong>${p.name}</strong><div class="subtitle">OVR ${p.overall} • Bat ${p.batting} • Bowl ${p.bowling} • Age ${p.age} • Potential ${p.potential} • ${p.trait}</div><div class="meter"><i style="width:${Math.min(100, p.overall)}%"></i></div></div>`).join("")}</div>`;
+      byId("compareModal").classList.add("active");
+    }
+
+    playerCard = function(p, mode) {
+      const owned = state.squad.includes(p.id);
+      const selected = state.playingXI.includes(p.id);
+      const price = mode === "auction" ? marketPrice(p) : p.value;
+      const trend = trendFor(p);
+      const watched = state.watchlist.includes(p.id);
+      const el = document.createElement("article");
+      el.className = "player premium-glow" + (owned ? " owned" : "") + (selected ? " selected" : "") + (watched ? " watchlisted" : "");
+      el.innerHTML = `
+        <div class="player-top">
+          <div>
+            <div class="name">${p.name}</div>
+            <div class="meta">${p.country} • ${p.role} • Age ${p.age} • ${p.trait}</div>
+          </div>
+          <div class="badge" data-tip="Overall rating">${p.overall}</div>
+        </div>
+        <div class="stat-row">
+          <div class="mini-stat"><span>Bat</span><strong>${p.batting}</strong></div>
+          <div class="mini-stat"><span>Bowl</span><strong>${p.bowling}</strong></div>
+          <div class="mini-stat"><span>${mode === "auction" ? "Ask" : "Value"}</span><strong>${price} Cr</strong></div>
+        </div>
+        <div class="pill-row">
+          <span class="pill ${trend < -5 ? "good" : trend > 8 ? "bad" : "warn"}">${trend >= 0 ? "+" : ""}${trend}% market</span>
+          <span class="pill">Pot ${p.potential}</span>
+          <span class="pill ${moraleScore() >= 70 ? "good" : "warn"}">Form ${state.playerStats[p.id]?.form || 50}</span>
+        </div>
+        <div class="player-actions"></div>
+      `;
+      const actions = el.querySelector(".player-actions");
+      if (mode === "auction") {
+        const btn = document.createElement("button");
+        btn.className = owned ? "ghost small" : "success small";
+        btn.textContent = owned ? "Owned" : "Bid";
+        btn.disabled = owned || state.budget < price;
+        btn.setAttribute("data-tip", "AI franchises may counter-bid before the hammer falls");
+        btn.onclick = () => buyPlayer(p.id);
+        const watch = document.createElement("button");
+        watch.className = watched ? "success small" : "ghost small";
+        watch.textContent = watched ? "Watching" : "Watch";
+        watch.onclick = () => toggleWatchlist(p.id);
+        const cmp = document.createElement("button");
+        cmp.className = "ghost small";
+        cmp.textContent = "Compare";
+        cmp.onclick = () => { addCompare(p.id); openCompare(compareSelection.length ? compareSelection : [p.id]); };
+        actions.append(btn, watch, cmp);
+      } else {
+        const xiBtn = document.createElement("button");
+        xiBtn.className = selected ? "ghost small" : "primary small";
+        xiBtn.textContent = selected ? "Remove from XI" : "Set in XI";
+        xiBtn.onclick = () => toggleXI(p.id);
+        const capBtn = document.createElement("button");
+        capBtn.className = state.captain === p.id ? "success small" : "ghost small";
+        capBtn.textContent = "Captain";
+        capBtn.disabled = !selected;
+        capBtn.onclick = () => setCaptain(p.id);
+        const vcBtn = document.createElement("button");
+        vcBtn.className = state.viceCaptain === p.id ? "success small" : "ghost small";
+        vcBtn.textContent = "Vice";
+        vcBtn.disabled = !selected;
+        vcBtn.onclick = () => setViceCaptain(p.id);
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "danger small";
+        removeBtn.textContent = "Release";
+        removeBtn.onclick = () => removePlayer(p.id);
+        actions.append(xiBtn, capBtn, vcBtn, removeBtn);
+      }
+      return el;
+    };
+
+    const priorRenderAuctionExtras = renderAuctionExtras;
+    renderAuctionExtras = function() {
+      priorRenderAuctionExtras();
+      byId("auctionClock").textContent = `${state.market.clock}s`;
+      byId("auctionClockHint").textContent = state.market.clock <= 5 ? "Hammer falling soon" : "Market refresh countdown";
+      byId("bestDealsPanel").innerHTML = bestDeals().map(d => `<div class="info-tile"><span>${d.p.role}</span><strong>${d.p.name}</strong><div class="subtitle">Ask ${d.price} Cr • OVR ${d.p.overall} • Pot ${d.p.potential}</div><button class="ghost small" onclick="toggleWatchlist('${d.p.id}')">${state.watchlist.includes(d.p.id) ? "Watching" : "Watch"}</button></div>`).join("") || `<div class="notice">No affordable best deals right now.</div>`;
+    };
+
+    const priorRenderSquad = renderSquad;
+    renderSquad = function() {
+      priorRenderSquad();
+      byId("managementPanel").innerHTML += `
+        <div class="toolbar-band">
+          <div class="info-tile"><span>Morale</span><strong>${moraleScore()}</strong><div class="meter"><i style="width:${moraleScore()}%"></i></div></div>
+          <div class="info-tile"><span>Reputation</span><strong>${reputationScore()}</strong><div class="meter"><i style="width:${reputationScore()}%"></i></div></div>
+        </div>
+      `;
+    };
+
+    function crowdExcitement(m) {
+      if (!m) return 0;
+      const close = m.innings === 2 ? Math.max(0, 35 - Math.abs((m.target || 0) - m.computerRuns)) : Math.min(35, m.playerRuns);
+      return Math.max(5, Math.min(100, Math.round(close + m.momentum * .45 + (m.playerWickets + m.computerWickets) * 4)));
+    }
+
+    const priorAiNumber = aiNumber;
+    aiNumber = function(m) {
+      const base = priorAiNumber(m);
+      const pressure = m.innings === 2 ? Math.max(0, (m.target || 0) - m.computerRuns) : 20;
+      const clutchXI = state.playingXI.map(playerById).filter(p => p && (p.trait === "Clutch" || p.trait === "Calm Head")).length;
+      if (m.batting === "computer" && pressure <= 10 && m.computerWickets >= 3) return Math.max(1, Math.min(6, base - Math.floor(clutchXI / 3)));
+      return base;
+    };
+
+    const priorNewMatch = newMatch;
+    newMatch = function() {
+      priorNewMatch();
+      if (state.match) {
+        state.match.crowd = crowdExcitement(state.match);
+        state.match.pressure = 20;
+        state.match.log.unshift(`Stadium lights shift to ${document.body.classList.contains("theme-night") ? "night" : "day"} mode. Crowd is building.`);
+        save();
+        renderMatch();
+      }
+    };
+
+    const priorPlayRun = playRun;
+    playRun = function(run) {
+      priorPlayRun(run);
+      const m = state.match;
+      if (!m) return;
+      m.crowd = crowdExcitement(m);
+      m.pressure = m.innings === 2 ? Math.max(0, Math.min(100, 100 - ((m.target - m.computerRuns) * 6) + m.computerWickets * 12)) : Math.min(100, m.playerWickets * 16 + m.playerRuns);
+      if (run === 6 && m.batting === "player") emitParticles("six");
+      if (m.crowd >= 90) addHistory("The crowd peaked above 90 during a pressure passage.");
+      save();
+      renderMatch();
+    };
+
+    const priorEndMatch = endMatch;
+    endMatch = function(result, message) {
+      const before = state.match ? { ...state.match } : null;
+      priorEndMatch(result, message);
+      if (!before) return;
+      if (result === "won") emitParticles("win");
+      if (result === "won" && before.innings === 2 && before.target - before.computerRuns <= 8) addHistory("A clutch finish sealed the match.");
+      awardMatchMVP(before);
+      state.records.highestInnings = Math.max(state.records.highestInnings || 0, state.stats.highestScore || 0);
+      save();
+      render();
+    };
+
+    function awardMatchMVP(m) {
+      const xi = state.playingXI.map(playerById).filter(Boolean);
+      if (!xi.length) return;
+      const pick = xi[Math.floor(seeded((m.playerRuns || 0) + (m.computerWickets || 0) + state.stats.matches) * xi.length)];
+      state.playerStats[pick.id].mvp = (state.playerStats[pick.id].mvp || 0) + 1;
+      state.records.allTimeMVP = pick.name;
+      state.notifications.unshift(`${pick.name} named match MVP.`);
+    }
+
+    const priorUpdateStats = updatePlayerStatsFromMatch;
+    updatePlayerStatsFromMatch = function(m) {
+      priorUpdateStats(m);
+      const xi = state.playingXI.map(playerById).filter(Boolean);
+      xi.forEach((p, idx) => {
+        const st = state.playerStats[p.id];
+        const extraBalls = Math.max(1, Math.round((st.runs + idx + m.playerRuns) % 8));
+        st.balls += extraBalls;
+        st.outs += idx < m.playerWickets ? 1 : 0;
+        st.seasonRuns += Math.round((m.playerRuns || 0) / Math.max(5, xi.length - idx));
+        st.seasonWickets += idx < (m.computerWickets || 0) ? 1 : 0;
+      });
+    };
+
+    const priorRenderMatch = renderMatch;
+    renderMatch = function(forcedMessage, tone) {
+      priorRenderMatch(forcedMessage, tone);
+      const m = state.match;
+      byId("crowdPanel").innerHTML = m ? `
+        <div class="info-tile"><span>Crowd Excitement</span><strong>${crowdExcitement(m)}</strong><div class="meter"><i style="width:${crowdExcitement(m)}%"></i></div></div>
+        <div class="info-tile"><span>Pressure</span><strong>${m.pressure || 0}</strong><div class="meter"><i style="width:${m.pressure || 0}%"></i></div></div>
+      ` : `<div class="notice">Crowd and pressure meters unlock during play.</div>`;
+    };
+
+    function generateRookie() {
+      const id = "r" + Date.now().toString(36) + Math.floor(Math.random() * 999);
+      const role = roles[Math.floor(Math.random() * roles.length)];
+      const overall = 58 + Math.floor(Math.random() * 18);
+      const rookie = {
+        id,
+        name: ["Avi","Neil","Yash","Reed","Owen","Zane","Arin","Toby"][Math.floor(Math.random()*8)] + " " + ["Verma","Cole","Stone","Mehta","Roy","Hayes","Bose","Lane"][Math.floor(Math.random()*8)],
+        country: countries[Math.floor(Math.random() * countries.length)],
+        role,
+        overall,
+        batting: Math.min(95, overall + Math.floor(Math.random() * 16)),
+        bowling: Math.min(95, overall + Math.floor(Math.random() * 16)),
+        value: Math.max(4, Math.round(overall / 3)),
+        age: 18 + Math.floor(Math.random() * 4),
+        potential: Math.min(99, overall + 12 + Math.floor(Math.random() * 12)),
+        trait: ["Clutch","Anchor","Finisher","Swing King","Mystery Spin","Calm Head"][Math.floor(Math.random() * 6)],
+        rookie: true
+      };
+      state.rookies.push(rookie);
+      players.push(rookie);
+      state.playerStats[id] = { matches: 0, runs: 0, wickets: 0, catches: 0, boughtFor: 0, sold: 0, form: 58, balls: 0, outs: 1, mvp: 0, seasonRuns: 0, seasonWickets: 0 };
+      state.career.rookiesGenerated++;
+      addHistory(`Rookie generated: ${rookie.name}, ${role}, potential ${rookie.potential}.`);
+    }
+
+    function applyCareerProgression() {
+      restoreRookies();
+      ownedPlayers().forEach(p => {
+        p.age++;
+        const st = state.playerStats[p.id];
+        const growthWindow = p.age <= 27 && p.overall < p.potential;
+        const veteranDecline = p.age >= 34;
+        if (growthWindow && st.form >= 55) {
+          p.overall = Math.min(p.potential, p.overall + 1);
+          p.batting = Math.min(99, p.batting + (p.role === "Batsman" || p.role === "Wicket Keeper" ? 1 : 0));
+          p.bowling = Math.min(99, p.bowling + (p.role === "Spinner" || p.role === "Fast Bowler" ? 1 : 0));
+          state.career.developmentEvents++;
+        }
+        if (veteranDecline && Math.random() < .45) {
+          p.overall = Math.max(55, p.overall - 1);
+          p.batting = Math.max(50, p.batting - 1);
+          p.bowling = Math.max(50, p.bowling - 1);
+        }
+        if (p.age >= 38 && Math.random() < .4) {
+          state.career.retirements.unshift(`${p.name} retired at ${p.age}.`);
+          state.squad = state.squad.filter(id => id !== p.id);
+          state.playingXI = state.playingXI.filter(id => id !== p.id);
+          if (state.captain === p.id) state.captain = "";
+          if (state.viceCaptain === p.id) state.viceCaptain = "";
+        }
+        st.seasonRuns = 0;
+        st.seasonWickets = 0;
+      });
+      generateRookie();
+    }
+
+    const priorResetLeagueSeason = resetLeagueSeason;
+    resetLeagueSeason = function() {
+      const previousDivision = state.league.division || 2;
+      const user = state.league.standings.find(t => t.name === "Your Franchise");
+      priorResetLeagueSeason();
+      state.league.division = previousDivision;
+      state.league.awards = [];
+      if (user && user.rank <= 2 && previousDivision === 2) {
+        state.league.division = 1;
+        state.league.awards.push("Promoted to Division One");
+        state.budget += 18;
+      } else if (user && user.rank >= 7 && previousDivision === 1) {
+        state.league.division = 2;
+        state.league.awards.push("Relegated to Division Two");
+      } else if (previousDivision === 1) {
+        state.league.awards.push("Survived in Division One");
+      }
+      if ((state.records.allTimeMVP || "").length) state.league.awards.push(`MVP spotlight: ${state.records.allTimeMVP}`);
+      applyCareerProgression();
+    };
+
+    const priorPlayLeagueRound = playLeagueRound;
+    playLeagueRound = function() {
+      const oldRound = state.league.round;
+      priorPlayLeagueRound();
+      if (state.league.round !== oldRound && state.league.rivals.includes(state.league.standings[0]?.name) && state.league.standings.find(t => t.name === "Your Franchise")?.rank <= 3) {
+        addHistory(`Rivalry win momentum built against ${state.league.standings[0].name}.`);
+      }
+      render();
+    };
+
+    const priorRenderLeague = renderLeague;
+    renderLeague = function() {
+      priorRenderLeague();
+      byId("divisionPanel").innerHTML = `
+        <div class="info-tile"><span>Current Division</span><strong>Division ${state.league.division}</strong><div class="subtitle">${state.league.division === 1 ? "Top flight pressure and larger prizes" : "Promotion chase and development runway"}</div></div>
+        <div class="info-tile"><span>Rivalries</span><strong>${state.league.rivals.join(", ")}</strong><div class="subtitle">Rivalry rounds boost reputation when your rank is strong.</div></div>
+        <div class="info-tile"><span>Season Awards</span><strong>${state.league.awards.length}</strong><div class="subtitle">${state.league.awards.join(" • ") || "No awards this season yet."}</div></div>
+      `;
+    };
+
+    const priorRenderHistory = renderHistory;
+    renderHistory = function() {
+      priorRenderHistory();
+      const rows = ownedPlayers().map(p => ({ p, st: state.playerStats[p.id] })).sort((a,b) => (b.st.runs + b.st.wickets * 18 + b.st.mvp * 40) - (a.st.runs + a.st.wickets * 18 + a.st.mvp * 40));
+      byId("playerStatsTable").innerHTML = rows.length ? `<table><thead><tr><th>Player</th><th>Age</th><th>Trait</th><th>M</th><th>Runs</th><th>Avg</th><th>SR</th><th>Wkts</th><th>MVP</th></tr></thead><tbody>${rows.map(({p,st}) => `<tr><td>${p.name}</td><td>${p.age}</td><td>${p.trait}</td><td>${st.matches}</td><td>${st.runs}</td><td>${battingAverage(st)}</td><td>${strikeRate(st)}</td><td>${st.wickets}</td><td>${st.mvp || 0}</td></tr>`).join("")}</tbody></table>` : `<div class="notice">Buy players to build statistical history.</div>`;
+      byId("seasonRecaps").innerHTML += `<div class="notice good" style="margin-top:12px">All-time records: Highest innings ${state.records.highestInnings || 0}, best team value ${crore(state.records.bestTeamValue || 0)}, leading MVP ${state.records.allTimeMVP || "None"}.</div>`;
+    };
+
+    const priorRenderDashboard = renderDashboard;
+    renderDashboard = function() {
+      priorRenderDashboard();
+      byId("seasonStats").innerHTML += `
+        ${row("Morale", moraleScore())}
+        ${row("Reputation", reputationScore())}
+        ${row("Division", state.league.division || 2)}
+      `;
+    };
+
+    function renderGlobalSearch() {
+      const q = byId("globalSearch").value.trim().toLowerCase();
+      const box = byId("globalResults");
+      if (!q) {
+        box.classList.remove("active");
+        box.innerHTML = "";
+        return;
+      }
+      const foundPlayers = players.filter(p => p.name.toLowerCase().includes(q) || p.role.toLowerCase().includes(q) || p.country.toLowerCase().includes(q)).slice(0, 8);
+      const foundHistory = (state.history || []).filter(h => h.toLowerCase().includes(q)).slice(0, 5);
+      box.classList.add("active");
+      box.innerHTML = `<div class="section-head"><h3>Search Results</h3><span class="subtitle">${foundPlayers.length + foundHistory.length} found</span></div>
+        <div class="toolbar-band">${foundPlayers.map(p => `<div class="info-tile"><span>${p.role}</span><strong>${p.name}</strong><div class="subtitle">${p.country} • OVR ${p.overall} • ${state.squad.includes(p.id) ? "Owned" : marketPrice(p) + " Cr"}</div></div>`).join("") || `<div class="notice">No players matched.</div>`}</div>
+        ${foundHistory.map(h => `<div class="log-entry">${h}</div>`).join("")}`;
+    }
+
+    function openHelp() {
+      byId("helpBody").innerHTML = `
+        <div class="notice good">Tutorial mode is active until you complete a match, play a league round, and export a save.</div>
+        ${row("1", "Build a balanced XI, then appoint captain and vice-captain.")}
+        ${row("2", "Use the watchlist and best deals to avoid overpaying in AI bidding wars.")}
+        ${row("3", "Develop rookies through seasons; older stars may decline or retire.")}
+        ${row("4", "Shortcuts: 1-6 play runs, A Auction, S Squad, M Match, L League, / Search.")}
+      `;
+      byId("helpModal").classList.add("active");
+    }
+
+    function wireV3Controls() {
+      byId("themeToggle").addEventListener("click", () => {
+        state.qol.theme = document.body.classList.contains("theme-night") ? "day" : "night";
+        applyTheme();
+        save();
+      });
+      byId("exportSave").addEventListener("click", () => {
+        const payload = JSON.stringify(state, null, 2);
+        const blob = new Blob([payload], { type: "application/json" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `hand-cricket-dynasty-season-${state.league.season}.json`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+        toast("Save file downloaded.");
+      });
+      byId("importSaveFile").addEventListener("click", () => byId("saveFile").click());
+      byId("saveFile").addEventListener("change", event => {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => confirmAction("Import this save file and replace current progress?", () => {
+          try {
+            state = JSON.parse(reader.result);
+            state.saveMeta = state.saveMeta || {};
+            state.saveMeta.imported = true;
+            migrateDynasty();
+            ensureV3State();
+            toast("Save file imported.");
+            render();
+          } catch (e) {
+            toast("Import failed. The selected file is not a valid save.");
+          }
+        });
+        reader.readAsText(file);
+      });
+      byId("restoreRecovery").addEventListener("click", () => confirmAction("Recover from the emergency recovery slot?", () => {
+        const recovery = localStorage.getItem(STORAGE_KEY + "Recovery");
+        if (!recovery) { toast("No recovery save found."); return; }
+        state = JSON.parse(recovery);
+        state.saveMeta = state.saveMeta || {};
+        state.saveMeta.restored = true;
+        migrateDynasty();
+        ensureV3State();
+        toast("Recovery save restored.");
+        render();
+      }));
+      byId("globalSearch").addEventListener("input", renderGlobalSearch);
+      byId("helpButton").addEventListener("click", openHelp);
+      byId("closeHelp").addEventListener("click", () => byId("helpModal").classList.remove("active"));
+      byId("closeCompare").addEventListener("click", () => byId("compareModal").classList.remove("active"));
+      document.addEventListener("keydown", e => {
+        if (e.target && ["INPUT","TEXTAREA","SELECT"].includes(e.target.tagName)) {
+          if (e.key !== "/") return;
+        }
+        const key = e.key.toLowerCase();
+        if (/^[1-6]$/.test(key)) playRun(Number(key));
+        if (key === "a") setScreen("auction");
+        if (key === "s") setScreen("squad");
+        if (key === "m") setScreen("match");
+        if (key === "l") setScreen("league");
+        if (key === "/") { e.preventDefault(); byId("globalSearch").focus(); }
+        if ("123456asml/".includes(key)) {
+          state.qol.shortcutUsed = true;
+          save();
+        }
+      });
+    }
+
+    function auctionTick() {
+      state.market.clock--;
+      if (state.market.clock <= 0) {
+        state.market.clock = 30;
+        state.market.cycle++;
+        state.market.refreshes++;
+        state.notifications.unshift("Auction market refreshed. Prices and deals shifted.");
+        toast("Auction market refreshed.");
+        save();
+      }
+      if (byId("auctionClock")) renderAuctionExtras();
+    }
+
+    function updateTutorial() {
+      if (state.tutorial.done) return;
+      const done = state.stats.matches >= 1 && (state.league.round > 0 || state.league.season > 1) && state.saveMeta.exported;
+      if (done) {
+        state.tutorial.done = true;
+        toast("Tutorial complete. Dynasty systems fully unlocked.");
+        save();
+      }
+    }
+
+    const priorRenderV3 = render;
+    render = function() {
+      priorRenderV3();
+      applyTheme();
+      updateTutorial();
+    };
+
+    ensureV3State();
+    wireV3Controls();
+    applyTheme();
+    setInterval(auctionTick, 1000);
+    setInterval(() => { save(); toast("Auto-saved dynasty."); }, 30000);
+    setInterval(() => { if (!state.qol.theme) applyTheme(); }, 5000);
+    render();
+  </script>
+  <script>
+    const DYNASTY_V4 = 4;
+    let audioContext = null;
+    let draggedLineupId = "";
+
+    function richStatTemplate() {
+      return {
+        matches: 0, wins: 0, runs: 0, balls: 0, highestScore: 0, outs: 0, fifties: 0, hundreds: 0, ducks: 0,
+        wickets: 0, bowlingRuns: 0, bestWickets: 0, bestRuns: 0, maidens: 0,
+        catches: 0, runOuts: 0, stumpings: 0, mvp: 0, championships: 0,
+        form: 50, confidence: 50, fitness: 88, experience: 0,
+        seasonRuns: 0, seasonWickets: 0, seasonMatches: 0,
+        growthHistory: [], marketHistory: [], achievements: [], trophies: []
+      };
+    }
+
+    function mergeStats(st) {
+      return { ...richStatTemplate(), ...(st || {}) };
+    }
+
+    function migrateV4() {
+      state.version = DYNASTY_V4;
+      state.audio = { volume: .45, muted: false, ...(state.audio || {}) };
+      state.teamPlan = state.teamPlan || {};
+      state.teamPlan.battingOrder = Array.isArray(state.teamPlan.battingOrder) ? state.teamPlan.battingOrder.filter(id => state.playingXI.includes(id)) : state.playingXI.slice();
+      state.playingXI.forEach(id => { if (!state.teamPlan.battingOrder.includes(id)) state.teamPlan.battingOrder.push(id); });
+      state.teamPlan.battingOrder = state.teamPlan.battingOrder.slice(0, 11);
+      state.teamPlan.bowling = state.teamPlan.bowling || { opening: [], middle: [], death: [] };
+      state.teamPlan.wicketkeeper = state.teamPlan.wicketkeeper || state.playingXI.find(id => playerById(id)?.role === "Wicket Keeper") || "";
+      state.news = Array.isArray(state.news) ? state.news : [];
+      state.trophies = Array.isArray(state.trophies) ? state.trophies : [];
+      players.forEach(p => {
+        if (!state.playerStats[p.id]) state.playerStats[p.id] = richStatTemplate();
+        state.playerStats[p.id] = mergeStats(state.playerStats[p.id]);
+        if (!state.playerStats[p.id].marketHistory.length) state.playerStats[p.id].marketHistory.push({ season: state.league?.season || 1, value: marketPrice(p) });
+      });
+      updateAudioUi();
+      persistNow();
+    }
+
+    function getAudio() {
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      return audioContext;
+    }
+
+    function playSound(name) {
+      if (!state.audio || state.audio.muted || state.audio.volume <= 0) return;
+      const ctx = getAudio();
+      const now = ctx.currentTime;
+      const gain = ctx.createGain();
+      gain.gain.value = state.audio.volume * .18;
+      gain.connect(ctx.destination);
+      const patterns = {
+        click: [[420,.04,"square"]],
+        purchase: [[520,.08,"triangle"],[720,.1,"triangle"]],
+        sell: [[260,.12,"sawtooth"]],
+        auction: [[440,.06,"square"],[660,.06,"square"],[880,.12,"square"]],
+        four: [[540,.08,"triangle"],[760,.12,"triangle"]],
+        six: [[520,.07,"sine"],[780,.09,"sine"],[1040,.16,"sine"]],
+        wicket: [[180,.18,"sawtooth"],[120,.12,"square"]],
+        win: [[520,.08,"triangle"],[700,.08,"triangle"],[920,.18,"triangle"]],
+        loss: [[240,.2,"sawtooth"],[170,.18,"sawtooth"]],
+        achievement: [[660,.08,"sine"],[990,.12,"sine"]],
+        season: [[392,.08,"triangle"],[587,.08,"triangle"],[784,.18,"triangle"]]
+      };
+      let t = now;
+      (patterns[name] || patterns.click).forEach(([freq, dur, type]) => {
+        const osc = ctx.createOscillator();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t);
+        const localGain = ctx.createGain();
+        localGain.gain.setValueAtTime(0, t);
+        localGain.gain.linearRampToValueAtTime(state.audio.volume * .18, t + .01);
+        localGain.gain.exponentialRampToValueAtTime(.0001, t + dur);
+        osc.connect(localGain).connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + dur + .02);
+        t += dur * .82;
+      });
+    }
+
+    function updateAudioUi() {
+      if (!byId("volumeSlider")) return;
+      byId("volumeSlider").value = Math.round((state.audio?.volume ?? .45) * 100);
+      byId("muteButton").textContent = state.audio?.muted ? "Sound Off" : "Sound On";
+      byId("audioStatus").textContent = state.audio?.muted ? "Muted" : `Volume ${byId("volumeSlider").value}%`;
+    }
+
+    const v4Toast = toast;
+    toast = function(message) {
+      v4Toast(message);
+      if (/Achievement unlocked/.test(message)) playSound("achievement");
+    };
+
+    function battingStrength() {
+      const xi = state.teamPlan.battingOrder.map(playerById).filter(Boolean);
+      return Math.round(xi.reduce((s,p,i) => s + p.batting * (i < 5 ? 1.08 : .92) * ((state.playerStats[p.id].form + state.playerStats[p.id].confidence) / 150), 0) / Math.max(1, xi.length));
+    }
+
+    function bowlingStrength() {
+      const ids = [...(state.teamPlan.bowling.opening || []), ...(state.teamPlan.bowling.middle || []), ...(state.teamPlan.bowling.death || [])];
+      const pool = (ids.length ? ids : state.playingXI).map(playerById).filter(Boolean);
+      return Math.round(pool.reduce((s,p) => s + p.bowling * ((state.playerStats[p.id].fitness + state.playerStats[p.id].form) / 170), 0) / Math.max(1, pool.length));
+    }
+
+    function fieldingStrength() {
+      const xi = state.playingXI.map(playerById).filter(Boolean);
+      return Math.round(xi.reduce((s,p) => s + (p.overall * .55 + (state.playerStats[p.id].fitness || 80) * .45), 0) / Math.max(1, xi.length));
+    }
+
+    function reorderBatting(fromId, toId) {
+      const order = state.teamPlan.battingOrder.slice();
+      const from = order.indexOf(fromId);
+      const to = order.indexOf(toId);
+      if (from < 0 || to < 0 || from === to) return;
+      order.splice(to, 0, order.splice(from, 1)[0]);
+      state.teamPlan.battingOrder = order;
+      save();
+      render();
+    }
+
+    function setBowlingPhase(id, phase, checked) {
+      Object.keys(state.teamPlan.bowling).forEach(key => {
+        state.teamPlan.bowling[key] = state.teamPlan.bowling[key].filter(x => x !== id);
+      });
+      if (checked) state.teamPlan.bowling[phase].push(id);
+      save();
+      render();
+    }
+
+    function renderAdvancedManagement() {
+      const order = state.teamPlan.battingOrder.filter(id => state.playingXI.includes(id));
+      state.playingXI.forEach(id => { if (!order.includes(id)) order.push(id); });
+      state.teamPlan.battingOrder = order.slice(0, 11);
+      byId("teamStrengthPanel").innerHTML = `
+        <div class="info-tile"><span>Team Overall</span><strong>${teamStrength()}</strong><div class="meter"><i style="width:${Math.min(100, teamStrength())}%"></i></div></div>
+        <div class="info-tile"><span>Batting</span><strong>${battingStrength()}</strong><div class="meter"><i style="width:${Math.min(100, battingStrength())}%"></i></div></div>
+        <div class="info-tile"><span>Bowling</span><strong>${bowlingStrength()}</strong><div class="meter"><i style="width:${Math.min(100, bowlingStrength())}%"></i></div></div>
+        <div class="info-tile"><span>Fielding</span><strong>${fieldingStrength()}</strong><div class="meter"><i style="width:${Math.min(100, fieldingStrength())}%"></i></div></div>
+      `;
+      byId("battingOrderList").innerHTML = state.teamPlan.battingOrder.map((id, i) => {
+        const p = playerById(id);
+        if (!p) return "";
+        return `<div class="lineup-item" draggable="true" data-lineup-id="${id}"><strong>${i + 1}</strong><span>${p.name}<br><small class="subtitle">${p.role} • Bat ${p.batting} • Form ${state.playerStats[id].form}</small></span><button class="ghost small" data-profile="${id}">Profile</button></div>`;
+      }).join("") || `<div class="notice">Set a Playing XI first.</div>`;
+      const bowlers = state.playingXI.map(playerById).filter(Boolean).sort((a,b) => b.bowling - a.bowling);
+      byId("bowlingPlanList").innerHTML = bowlers.map(p => {
+        const current = Object.keys(state.teamPlan.bowling).find(phase => state.teamPlan.bowling[phase].includes(p.id)) || "";
+        return `<div class="lineup-item"><strong>${p.bowling}</strong><span>${p.name}<br><small class="subtitle">${p.role} • Fitness ${state.playerStats[p.id].fitness}</small></span><select class="role-select" data-bowl-id="${p.id}"><option value="">No phase</option><option value="opening" ${current==="opening"?"selected":""}>Opening</option><option value="middle" ${current==="middle"?"selected":""}>Middle</option><option value="death" ${current==="death"?"selected":""}>Death</option></select></div>`;
+      }).join("") || `<div class="notice">No bowlers in XI yet.</div>`;
+      const options = state.playingXI.map(id => {
+        const p = playerById(id);
+        return p ? `<option value="${id}">${p.name} (${p.role})</option>` : "";
+      }).join("");
+      byId("specialistPanel").innerHTML = `
+        <label class="subtitle">Captain</label><select id="captainSelect" class="role-select"><option value="">Not set</option>${options}</select>
+        <label class="subtitle">Vice Captain</label><select id="viceSelect" class="role-select"><option value="">Not set</option>${options}</select>
+        <label class="subtitle">Wicketkeeper</label><select id="keeperSelect" class="role-select"><option value="">Not set</option>${options}</select>
+      `;
+      byId("captainSelect").value = state.captain || "";
+      byId("viceSelect").value = state.viceCaptain || "";
+      byId("keeperSelect").value = state.teamPlan.wicketkeeper || "";
+      document.querySelectorAll("[data-lineup-id]").forEach(el => {
+        el.addEventListener("dragstart", () => { draggedLineupId = el.dataset.lineupId; el.classList.add("dragging"); });
+        el.addEventListener("dragend", () => el.classList.remove("dragging"));
+        el.addEventListener("dragover", e => e.preventDefault());
+        el.addEventListener("drop", e => { e.preventDefault(); reorderBatting(draggedLineupId, el.dataset.lineupId); });
+      });
+      document.querySelectorAll("[data-bowl-id]").forEach(sel => sel.addEventListener("change", () => setBowlingPhase(sel.dataset.bowlId, sel.value, !!sel.value)));
+      document.querySelectorAll("[data-profile]").forEach(btn => btn.addEventListener("click", () => openPlayerProfile(btn.dataset.profile)));
+      byId("captainSelect").onchange = e => { state.captain = e.target.value; save(); render(); };
+      byId("viceSelect").onchange = e => { state.viceCaptain = e.target.value; save(); render(); };
+      byId("keeperSelect").onchange = e => { state.teamPlan.wicketkeeper = e.target.value; save(); render(); };
+    }
+
+    function statLine(label, value) {
+      return `<div class="leader-row"><span>${label}</span><strong>${value}</strong></div>`;
+    }
+
+    function openPlayerProfile(id) {
+      const p = playerById(id);
+      if (!p) return;
+      const st = mergeStats(state.playerStats[id]);
+      const market = st.marketHistory.slice(-8);
+      const max = Math.max(1, ...market.map(m => m.value));
+      const points = market.map((m, i) => `${(i / Math.max(1, market.length - 1)) * 100},${80 - (m.value / max) * 70}`).join(" ");
+      byId("playerProfileTitle").textContent = p.name;
+      byId("playerProfileBody").innerHTML = `
+        <div class="toolbar-band">
+          <div class="info-tile"><span>${p.role}</span><strong>OVR ${p.overall}</strong><div class="subtitle">Age ${p.age} • Potential ${p.potential} • ${p.trait}</div></div>
+          <div class="info-tile"><span>Form</span><strong>${st.form}</strong><div class="meter"><i style="width:${st.form}%"></i></div></div>
+          <div class="info-tile"><span>Confidence</span><strong>${st.confidence}</strong><div class="meter"><i style="width:${st.confidence}%"></i></div></div>
+          <div class="info-tile"><span>Fitness</span><strong>${st.fitness}</strong><div class="meter"><i style="width:${st.fitness}%"></i></div></div>
+        </div>
+        <div class="grid">
+          <div class="span-4">${statLine("Matches", st.matches)}${statLine("Wins", st.wins)}${statLine("MVP Awards", st.mvp)}${statLine("Championships", st.championships)}</div>
+          <div class="span-4">${statLine("Runs", st.runs)}${statLine("Highest", st.highestScore)}${statLine("Average", battingAverage(st))}${statLine("Strike Rate", strikeRate(st))}${statLine("50s / 100s", `${st.fifties} / ${st.hundreds}`)}${statLine("Ducks", st.ducks)}</div>
+          <div class="span-4">${statLine("Wickets", st.wickets)}${statLine("Runs Conceded", st.bowlingRuns)}${statLine("Economy", st.balls ? Math.round(st.bowlingRuns / Math.max(1, st.balls / 6) * 10) / 10 : 0)}${statLine("Best Bowling", `${st.bestWickets}/${st.bestRuns || 0}`)}${statLine("Catches", st.catches)}${statLine("Run Outs / Stumpings", `${st.runOuts} / ${st.stumpings}`)}</div>
+        </div>
+        <h3 style="margin-top:14px">Market Value History</h3>
+        <svg class="sparkline" viewBox="0 0 100 84" preserveAspectRatio="none"><polyline points="${points}" fill="none" stroke="#f7c948" stroke-width="3"></polyline></svg>
+        <div class="toolbar-band">
+          <div class="info-tile"><span>Growth History</span><strong>${st.growthHistory.slice(-1)[0] || "No growth event yet"}</strong></div>
+          <div class="info-tile"><span>Achievements</span><strong>${st.achievements.join(", ") || "None yet"}</strong></div>
+          <div class="info-tile"><span>Trophy Cabinet</span><strong>${st.trophies.join(", ") || "Empty"}</strong></div>
+        </div>
+      `;
+      byId("playerProfileModal").classList.add("active");
+    }
+
+    const v4PlayerCard = playerCard;
+    playerCard = function(p, mode) {
+      const el = v4PlayerCard(p, mode);
+      const actions = el.querySelector(".player-actions");
+      const profile = document.createElement("button");
+      profile.className = "ghost small";
+      profile.textContent = "Profile";
+      profile.onclick = () => openPlayerProfile(p.id);
+      actions.appendChild(profile);
+      return el;
+    };
+
+    const v4RenderSquad = renderSquad;
+    renderSquad = function() {
+      v4RenderSquad();
+      renderAdvancedManagement();
+    };
+
+    const v4BuyPlayer = buyPlayer;
+    buyPlayer = function(id) {
+      const before = state.squad.includes(id);
+      v4BuyPlayer(id);
+      if (!before && state.squad.includes(id)) {
+        playSound("purchase");
+        playSound("auction");
+        const p = playerById(id);
+        if (p) state.playerStats[id].marketHistory.push({ season: state.league.season, value: marketPrice(p) });
+      }
+    };
+
+    const v4RemovePlayer = removePlayer;
+    removePlayer = function(id) {
+      playSound("sell");
+      v4RemovePlayer(id);
+    };
+
+    function distributeBattingRuns(total, wickets) {
+      const order = (state.teamPlan.battingOrder.length ? state.teamPlan.battingOrder : state.playingXI).map(playerById).filter(Boolean);
+      let left = total;
+      return order.map((p, i) => {
+        const formBoost = state.playerStats[p.id].form / 100;
+        const base = i < wickets + 2 ? .06 + seeded(total + i + p.overall) * .18 : .02 + seeded(i + total) * .1;
+        const runs = i === order.length - 1 ? Math.max(0, left) : Math.max(0, Math.min(left, Math.round(total * base * (1 + formBoost))));
+        left -= runs;
+        return { id: p.id, runs };
+      });
+    }
+
+    function updateDetailedPlayerStats(m) {
+      const batting = distributeBattingRuns(m.playerRuns || 0, m.playerWickets || 0);
+      const wicketIds = new Set(batting.slice(0, m.playerWickets || 0).map(x => x.id));
+      batting.forEach(({ id, runs }) => {
+        const st = state.playerStats[id] = mergeStats(state.playerStats[id]);
+        const balls = Math.max(runs ? 1 : 0, Math.round(runs * (.65 + seeded(runs + st.matches) * .55)));
+        st.runs += runs;
+        st.balls += balls;
+        st.highestScore = Math.max(st.highestScore, runs);
+        st.outs += wicketIds.has(id) ? 1 : 0;
+        st.fifties += runs >= 50 && runs < 100 ? 1 : 0;
+        st.hundreds += runs >= 100 ? 1 : 0;
+        st.ducks += runs === 0 && wicketIds.has(id) ? 1 : 0;
+        st.matches += 1;
+        st.wins += m.result === "won" ? 1 : 0;
+        st.seasonRuns += runs;
+        st.form = Math.max(0, Math.min(100, st.form + (runs >= 20 ? 5 : runs <= 2 ? -5 : 1) + (m.result === "won" ? 2 : -1)));
+        st.confidence = Math.max(0, Math.min(100, st.confidence + (runs >= 15 ? 4 : -2) + (m.result === "won" ? 2 : 0)));
+        st.fitness = Math.max(25, Math.min(100, st.fitness - Math.ceil(balls / 18) + 2));
+        st.experience += 3 + Math.floor(runs / 10);
+        if (runs >= 50 && !st.achievements.includes("Fifty")) st.achievements.push("Fifty");
+        if (runs >= 100 && !st.achievements.includes("Hundred")) st.achievements.push("Hundred");
+      });
+      const bowlers = [...(state.teamPlan.bowling.opening || []), ...(state.teamPlan.bowling.middle || []), ...(state.teamPlan.bowling.death || [])].filter(Boolean);
+      const bowlingPool = (bowlers.length ? bowlers : state.playingXI).map(playerById).filter(Boolean);
+      let wkLeft = m.computerWickets || 0;
+      bowlingPool.slice(0, 5).forEach((p, i, arr) => {
+        const st = state.playerStats[p.id] = mergeStats(state.playerStats[p.id]);
+        const wk = i === arr.length - 1 ? wkLeft : Math.min(wkLeft, Math.floor(seeded(i + m.computerRuns + p.bowling) * (wkLeft + 1)));
+        wkLeft -= wk;
+        const conceded = Math.max(0, Math.round((m.computerRuns || 0) / Math.max(1, arr.length) + seeded(i + p.overall) * 8 - wk * 2));
+        st.wickets += wk;
+        st.bowlingRuns += conceded;
+        st.bestWickets = Math.max(st.bestWickets, wk);
+        if (wk >= st.bestWickets) st.bestRuns = conceded;
+        st.maidens += conceded === 0 ? 1 : 0;
+        st.seasonWickets += wk;
+        st.form = Math.max(0, Math.min(100, st.form + wk * 4 - Math.floor(conceded / 14)));
+        st.confidence = Math.max(0, Math.min(100, st.confidence + wk * 3));
+        st.fitness = Math.max(25, st.fitness - 2);
+      });
+      const keeper = state.teamPlan.wicketkeeper;
+      if (keeper && state.playerStats[keeper]) {
+        state.playerStats[keeper].catches += Math.min(2, m.computerWickets || 0);
+        state.playerStats[keeper].stumpings += playerById(keeper)?.role === "Wicket Keeper" && (m.computerWickets || 0) > 2 ? 1 : 0;
+      }
+      state.playingXI.forEach(id => {
+        const st = state.playerStats[id];
+        st.runOuts += seeded(st.matches + st.runs) > .92 ? 1 : 0;
+      });
+    }
+
+    const v4UpdateStats = updatePlayerStatsFromMatch;
+    updatePlayerStatsFromMatch = function(m) {
+      v4UpdateStats(m);
+      updateDetailedPlayerStats(m);
+    };
+
+    const v4PlayRun = playRun;
+    playRun = function(run) {
+      const beforeWickets = state.match ? (state.match.playerWickets + state.match.computerWickets) : 0;
+      v4PlayRun(run);
+      const m = state.match;
+      if (!m) return;
+      byId("scoreView").classList.remove("counter-pop");
+      void byId("scoreView").offsetWidth;
+      byId("scoreView").classList.add("counter-pop");
+      const wickets = m.playerWickets + m.computerWickets;
+      if (wickets > beforeWickets) {
+        playSound("wicket");
+        byId("match").classList.add("celebrate");
+        setTimeout(() => byId("match").classList.remove("celebrate"), 600);
+      } else if (run === 4) playSound("four");
+      else if (run === 6) playSound("six");
+    };
+
+    const v4EndMatch = endMatch;
+    endMatch = function(result, message) {
+      v4EndMatch(result, message);
+      playSound(result === "won" ? "win" : "loss");
+    };
+
+    const v4ResetSeason = resetLeagueSeason;
+    resetLeagueSeason = function() {
+      const championBefore = state.league.championHistory?.[0]?.champion;
+      v4ResetSeason();
+      if (championBefore === "Your Franchise") {
+        playSound("season");
+        state.trophies.unshift({ title: `Season ${state.league.season - 1} Champions`, date: new Date().toLocaleDateString() });
+        state.playingXI.forEach(id => {
+          state.playerStats[id].championships++;
+          state.playerStats[id].trophies.push("League Champion");
+        });
+      }
+    };
+
+    const v4CareerProgression = applyCareerProgression;
+    applyCareerProgression = function() {
+      const before = new Map(players.map(p => [p.id, p.overall]));
+      v4CareerProgression();
+      ownedPlayers().forEach(p => {
+        const old = before.get(p.id) || p.overall;
+        const st = state.playerStats[p.id];
+        if (p.overall !== old) st.growthHistory.push(`Season ${state.league.season}: ${old} to ${p.overall}`);
+        st.marketHistory.push({ season: state.league.season, value: marketPrice(p) });
+      });
+    };
+
+    const v4RenderHistory = renderHistory;
+    renderHistory = function() {
+      v4RenderHistory();
+      byId("trophyRoom").innerHTML = (state.trophies || []).length ? state.trophies.map(t => `<div class="trophy"><strong>${t.title}</strong><div class="subtitle">${t.date}</div></div>`).join("") : `<div class="notice">Win championships and awards to fill the trophy room.</div>`;
+      const feed = [
+        ...(state.news || []),
+        ...(state.notifications || []).map(n => `Rumour desk: ${n}`),
+        ...(state.league.awards || []).map(a => `Awards night: ${a}`),
+        ...(state.career.retirements || []).slice(0, 5)
+      ].slice(0, 18);
+      byId("newsFeed").innerHTML = feed.length ? feed.map(n => `<div class="log-entry">${n}</div>`).join("") : `<div class="notice">News feed will fill with transfers, rivalries, awards, and retirements.</div>`;
+    };
+
+    const v4RenderMatch = renderMatch;
+    renderMatch = function(forcedMessage, tone) {
+      v4RenderMatch(forcedMessage, tone);
+      const m = state.match;
+      if (m && m.log) {
+        byId("matchLog").innerHTML = m.log.map((x, i) => `<div class="log-entry ${i === 0 ? "premium-glow" : ""}">${x.replace("OUT", "<strong>OUT</strong>").replace("six", "<strong>six</strong>").replace("6", "<strong>6</strong>")}</div>`).join("");
+      }
+    };
+
+    function wireV4Controls() {
+      byId("muteButton").addEventListener("click", () => {
+        state.audio.muted = !state.audio.muted;
+        playSound("click");
+        updateAudioUi();
+        save();
+      });
+      byId("volumeSlider").addEventListener("input", e => {
+        state.audio.volume = Number(e.target.value) / 100;
+        state.audio.muted = state.audio.volume === 0 ? true : state.audio.muted && state.audio.volume === 0;
+        updateAudioUi();
+        save();
+      });
+      byId("closePlayerProfile").addEventListener("click", () => byId("playerProfileModal").classList.remove("active"));
+      document.addEventListener("click", e => {
+        if (e.target.closest("button")) playSound("click");
+      });
+    }
+
+    const v4Render = render;
+    render = function() {
+      v4Render();
+      renderAdvancedManagement();
+      updateAudioUi();
+    };
+
+    migrateV4();
+    wireV4Controls();
+    render();
+  </script>
+</body>
+</html>

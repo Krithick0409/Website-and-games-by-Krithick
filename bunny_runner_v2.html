@@ -1,0 +1,2293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>Bunny Runner Game</title>
+<style>
+  :root{
+    --bg:#0e1020;
+    --ink:#f8f5e6;
+    --accent:#ffb84d;
+    --accent2:#ff5c8a;
+    --shadow:#00000055;
+    --r-common:#b8c3d1;
+    --r-uncommon:#5fd47a;
+    --r-rare:#4aa8ff;
+    --r-epic:#c470ff;
+    --r-legend:#ffb84d;
+    --r-mythic:#ff3b7a;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    overflow:hidden;-webkit-user-select:none;user-select:none}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  canvas{image-rendering:pixelated;image-rendering:crisp-edges;background:#0e1020;
+    box-shadow:0 10px 40px #000a, inset 0 0 0 4px #0006;
+    max-width:100vw;max-height:100vh;touch-action:none;}
+  #hud{position:fixed;top:12px;left:50%;transform:translateX(-50%);
+    display:flex;gap:14px;font-size:14px;letter-spacing:2px;
+    text-shadow:2px 2px 0 var(--shadow);pointer-events:none;
+    text-transform:uppercase;}
+  #hud b{color:var(--accent)}
+  #hint{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);
+    font-size:11px;letter-spacing:2px;color:#fff8;text-transform:uppercase;
+    text-shadow:1px 1px 0 var(--shadow);pointer-events:none;}
+
+  /* ---------- Shop overlay ---------- */
+  #shop{position:fixed;inset:0;background:radial-gradient(ellipse at center,#12081e 0%,#05030a 100%);
+    display:none;flex-direction:column;z-index:20;padding:14px 16px;color:#f8f5e6;
+    font-family:ui-monospace,monospace;letter-spacing:1px;
+    animation:fadeIn .25s ease-out;}
+  #shop.open{display:flex}
+  @keyframes fadeIn{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:none}}
+  @keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
+  @keyframes ring{0%{transform:scale(.3);opacity:.9}100%{transform:scale(2.2);opacity:0}}
+  @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  #shopHead{display:flex;align-items:center;gap:12px;padding-bottom:10px;
+    border-bottom:1px solid #ffffff22;flex-wrap:wrap}
+  #shopHead h1{font-size:18px;margin:0;letter-spacing:3px;color:var(--accent);
+    text-shadow:2px 2px 0 #000}
+  #shopHead .bal{margin-left:auto;font-size:14px;color:#ffb066;letter-spacing:2px}
+  #shopHead .bal b{color:var(--accent);font-weight:700}
+  #shopHead button.close{background:#2a0f24;border:1px solid var(--accent2);color:#fff;
+    padding:6px 12px;cursor:pointer;font-family:inherit;letter-spacing:2px;
+    text-transform:uppercase;font-size:11px;transition:.15s}
+  #shopHead button.close:hover{background:var(--accent2);color:#1a0f2a}
+  #shopTools{display:flex;gap:8px;padding:10px 0;flex-wrap:wrap;align-items:center;
+    border-bottom:1px solid #ffffff11}
+  #shopTools input[type=text]{flex:1;min-width:120px;background:#0a0616;
+    border:1px solid #ffffff22;color:#fff;padding:6px 10px;font-family:inherit;
+    font-size:12px;letter-spacing:1px;outline:none;transition:.15s}
+  #shopTools input:focus{border-color:var(--accent);box-shadow:0 0 0 2px #ffb84d33}
+  #shopTools select{background:#0a0616;border:1px solid #ffffff22;color:#fff;
+    padding:6px 8px;font-family:inherit;font-size:11px;letter-spacing:1px;outline:none;cursor:pointer}
+  .chip{background:#160b28;border:1px solid #ffffff22;color:#cfc7e6;
+    padding:5px 10px;cursor:pointer;font-family:inherit;font-size:10px;
+    letter-spacing:2px;text-transform:uppercase;transition:.15s}
+  .chip:hover{border-color:var(--accent);color:#fff;transform:translateY(-1px)}
+  .chip.on{background:#2a1650;border-color:var(--accent);color:#fff;
+    box-shadow:0 0 10px #ffb84d55}
+  .chip[data-r=common].on{border-color:var(--r-common);box-shadow:0 0 8px #b8c3d155}
+  .chip[data-r=uncommon].on{border-color:var(--r-uncommon);box-shadow:0 0 8px #5fd47a55}
+  .chip[data-r=rare].on{border-color:var(--r-rare);box-shadow:0 0 8px #4aa8ff55}
+  .chip[data-r=epic].on{border-color:var(--r-epic);box-shadow:0 0 8px #c470ff55}
+  .chip[data-r=legend].on{border-color:var(--r-legend);box-shadow:0 0 8px #ffb84d55}
+  .chip[data-r=mythic].on{border-color:var(--r-mythic);box-shadow:0 0 8px #ff3b7a55}
+
+  #shopBody{flex:1;display:grid;grid-template-columns:1fr 260px;gap:14px;
+    padding-top:12px;overflow:hidden;min-height:0}
+  #shopGrid{overflow-y:auto;overflow-x:hidden;display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:10px;padding-right:6px;align-content:start}
+  #shopGrid::-webkit-scrollbar{width:8px}
+  #shopGrid::-webkit-scrollbar-thumb{background:#ffb84d55;border-radius:4px}
+  .card{background:#0f0820;border:2px solid #ffffff22;padding:8px;cursor:pointer;
+    position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;
+    transition:transform .18s ease,border-color .18s,box-shadow .18s;
+    animation:cardIn .25s ease-out both;overflow:hidden}
+  .card:hover{transform:translateY(-3px) scale(1.02);z-index:2}
+  .card.sel{outline:2px solid #fff;outline-offset:-2px}
+  .card.equipped{background:linear-gradient(180deg,#3a2410,#0f0820)}
+  .card[data-r=common]{border-color:var(--r-common)}
+  .card[data-r=uncommon]{border-color:var(--r-uncommon);box-shadow:0 0 0 0 #5fd47a00}
+  .card[data-r=uncommon]:hover{box-shadow:0 4px 16px #5fd47a55}
+  .card[data-r=rare]{border-color:var(--r-rare)}
+  .card[data-r=rare]:hover{box-shadow:0 4px 16px #4aa8ff66}
+  .card[data-r=epic]{border-color:var(--r-epic)}
+  .card[data-r=epic]:hover{box-shadow:0 4px 18px #c470ff77}
+  .card[data-r=legend]{border-color:var(--r-legend)}
+  .card[data-r=legend]:hover{box-shadow:0 4px 22px #ffb84d88}
+  .card[data-r=legend]::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(120deg,transparent 30%,#ffe9a833 50%,transparent 70%);
+    background-size:200% 100%;animation:shimmer 3s linear infinite;opacity:.5}
+  .card[data-r=mythic]{border-color:var(--r-mythic)}
+  .card[data-r=mythic]:hover{box-shadow:0 4px 26px #ff3b7aaa}
+  .card[data-r=mythic]::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(120deg,transparent 30%,#ff3b7a55 50%,transparent 70%);
+    background-size:200% 100%;animation:shimmer 2s linear infinite}
+  .card canvas{width:64px;height:64px;image-rendering:pixelated;
+    background:radial-gradient(ellipse at 50% 70%,#00000055,transparent 70%)}
+  .card .nm{font-size:9px;letter-spacing:1px;text-align:center;line-height:1.1;
+    color:#fff;text-transform:uppercase;min-height:20px}
+  .card .rr{font-size:7px;letter-spacing:2px;opacity:.9}
+  .card[data-r=common] .rr{color:var(--r-common)}
+  .card[data-r=uncommon] .rr{color:var(--r-uncommon)}
+  .card[data-r=rare] .rr{color:var(--r-rare)}
+  .card[data-r=epic] .rr{color:var(--r-epic)}
+  .card[data-r=legend] .rr{color:var(--r-legend)}
+  .card[data-r=mythic] .rr{color:var(--r-mythic)}
+  .card .pr{font-size:9px;letter-spacing:1px;color:#ffb066;margin-top:2px}
+  .card .pr.owned{color:#7ad48a}
+  .card .pr.equip{color:var(--accent)}
+  .card .lock{position:absolute;inset:0;background:#000000aa;display:flex;
+    align-items:center;justify-content:center;font-size:16px;pointer-events:none;
+    opacity:0;transition:opacity .2s}
+  .card.locked:hover .lock{opacity:1}
+  .card .eqBadge{position:absolute;top:4px;right:4px;background:var(--accent);
+    color:#1a0f2a;font-size:7px;padding:2px 4px;letter-spacing:1px;font-weight:700}
+  .card .unlockRing{position:absolute;left:50%;top:40%;width:60px;height:60px;
+    margin-left:-30px;margin-top:-30px;border-radius:50%;border:3px solid var(--accent);
+    pointer-events:none;animation:ring .8s ease-out;opacity:0}
+
+  #shopPreview{background:#0a0518;border:2px solid #ffffff22;padding:12px;
+    display:flex;flex-direction:column;gap:8px;overflow-y:auto;min-height:0}
+  #shopPreview .pvStage{background:linear-gradient(180deg,#1a1030 0%,#0a0518 100%);
+    border:1px solid #ffffff11;padding:10px;display:flex;justify-content:center;
+    align-items:center;height:120px;position:relative;overflow:hidden}
+  #shopPreview canvas{width:160px;height:100px;image-rendering:pixelated}
+  #shopPreview .pvName{font-size:12px;letter-spacing:2px;color:#fff;text-transform:uppercase;
+    text-align:center;line-height:1.2}
+  #shopPreview .pvRare{font-size:9px;letter-spacing:3px;text-align:center;text-transform:uppercase}
+  #shopPreview .pvDesc{font-size:10px;letter-spacing:1px;color:#cfc7e6;line-height:1.4;
+    background:#000000aa;padding:6px 8px;border-left:2px solid var(--accent)}
+  #shopPreview .pvRow{display:flex;justify-content:space-between;font-size:9px;
+    letter-spacing:1px;color:#a89ecf;padding:2px 0;border-bottom:1px dotted #ffffff11}
+  #shopPreview .pvRow b{color:#fff}
+  #shopPreview .pvAnim{display:flex;gap:6px;justify-content:center;margin-top:4px}
+  #shopPreview .pvAnim div{flex:1;background:#0f0820;border:1px solid #ffffff11;
+    padding:4px;display:flex;flex-direction:column;align-items:center;gap:2px}
+  #shopPreview .pvAnim canvas{width:48px;height:48px}
+  #shopPreview .pvAnim span{font-size:7px;letter-spacing:1px;color:#8f83b0;text-transform:uppercase}
+  #shopPreview .pvBtn{margin-top:auto;padding:10px;text-align:center;font-size:11px;
+    letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:inherit;
+    border:1px solid transparent;transition:.15s;color:#fff}
+  #shopPreview .pvBtn.buy{background:var(--accent2);border-color:var(--accent2);color:#1a0f2a;font-weight:700}
+  #shopPreview .pvBtn.buy:hover{filter:brightness(1.1);transform:translateY(-1px)}
+  #shopPreview .pvBtn.buy.no{background:#3a1a2a;border-color:#5a2a3a;color:#a88;cursor:not-allowed}
+  #shopPreview .pvBtn.equip{background:#2a4a30;border-color:var(--r-uncommon);color:#fff}
+  #shopPreview .pvBtn.equip:hover{background:var(--r-uncommon);color:#0a0518}
+  #shopPreview .pvBtn.equipped{background:transparent;border-color:var(--accent);color:var(--accent);cursor:default}
+
+  #confirm{position:fixed;inset:0;background:#000000cc;display:none;
+    align-items:center;justify-content:center;z-index:30;animation:fadeIn .2s}
+  #confirm.open{display:flex}
+  #confirm .box{background:#12081e;border:2px solid var(--accent);padding:20px 24px;
+    text-align:center;max-width:320px;animation:pop .3s ease-out}
+  #confirm h2{margin:0 0 8px;color:var(--accent);letter-spacing:3px;font-size:14px}
+  #confirm p{margin:8px 0;font-size:11px;letter-spacing:1px;color:#cfc7e6;line-height:1.4}
+  #confirm p b{color:#fff}
+  #confirm .row{display:flex;gap:10px;margin-top:14px;justify-content:center}
+  #confirm button{padding:8px 14px;font-family:inherit;font-size:11px;
+    letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid;transition:.15s}
+  #confirm button.ok{background:var(--accent2);border-color:var(--accent2);color:#1a0f2a}
+  #confirm button.ok:hover{filter:brightness(1.15)}
+  #confirm button.no{background:transparent;border-color:#ffffff33;color:#cfc7e6}
+  #confirm button.no:hover{border-color:#fff;color:#fff}
+
+  #toastEl{position:fixed;top:50px;left:50%;transform:translateX(-50%);
+    background:var(--accent);color:#1a0f2a;padding:10px 18px;font-size:11px;
+    letter-spacing:2px;text-transform:uppercase;font-weight:700;z-index:40;
+    display:none;animation:pop .3s ease-out}
+  #toastEl.show{display:block}
+
+  @media (max-width:700px){
+    #shopBody{grid-template-columns:1fr}
+    #shopPreview{max-height:200px}
+    #shopGrid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+  }
+</style>
+  <meta property="og:title" content="Bunny Runner Game">
+  <meta name="twitter:title" content="Bunny Runner Game">
+  <meta name="description" content="Endless runner with 50+ handcrafted bunny skins across six rarities.">
+  <meta property="og:description" content="Endless runner with 50+ handcrafted bunny skins across six rarities.">
+  <meta name="twitter:description" content="Endless runner with 50+ handcrafted bunny skins across six rarities.">
+  <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3febc1e8-9238-4fb9-a59b-574d0d0999ee">
+  <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3febc1e8-9238-4fb9-a59b-574d0d0999ee">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:type" content="website">
+</head>
+<body>
+<div id="wrap"><canvas id="game" width="480" height="270"></canvas></div>
+<div id="hud"><span>Score <b id="s">0</b></span><span>Best <b id="b">0</b></span><span>🥕 <b id="c">0</b></span></div>
+<div id="hint">Space / ↑ / Tap — Jump &nbsp;·&nbsp; P — Pause &nbsp;·&nbsp; R — Restart &nbsp;·&nbsp; M — Mute &nbsp;·&nbsp; S — Shop</div>
+
+<div id="shop" aria-hidden="true">
+  <div id="shopHead">
+    <h1>SKIN VAULT</h1>
+    <span style="font-size:10px;letter-spacing:2px;color:#8f83b0">50+ HANDCRAFTED BUNNIES</span>
+    <span class="bal">🥕 BALANCE: <b id="shopBal">0</b></span>
+    <button class="close" id="closeShop">CLOSE  ✕</button>
+  </div>
+  <div id="shopTools">
+    <input type="text" id="shopSearch" placeholder="SEARCH SKINS..." autocomplete="off"/>
+    <div id="filterChips" style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="chip on" data-r="all">ALL</button>
+      <button class="chip" data-r="common">COMMON</button>
+      <button class="chip" data-r="uncommon">UNCOMMON</button>
+      <button class="chip" data-r="rare">RARE</button>
+      <button class="chip" data-r="epic">EPIC</button>
+      <button class="chip" data-r="legend">LEGENDARY</button>
+      <button class="chip" data-r="mythic">MYTHIC</button>
+    </div>
+    <select id="shopSort" title="Sort">
+      <option value="rarity">SORT: RARITY</option>
+      <option value="priceAsc">SORT: PRICE ↑</option>
+      <option value="priceDesc">SORT: PRICE ↓</option>
+      <option value="name">SORT: NAME</option>
+      <option value="owned">SORT: OWNED</option>
+    </select>
+  </div>
+  <div id="shopBody">
+    <div id="shopGrid"></div>
+    <div id="shopPreview">
+      <div class="pvStage"><canvas id="pvCanvas" width="80" height="50"></canvas></div>
+      <div class="pvName" id="pvName">—</div>
+      <div class="pvRare" id="pvRare">—</div>
+      <div class="pvDesc" id="pvDesc">Select a skin to preview.</div>
+      <div class="pvRow"><span>ACCESSORY</span><b id="pvAcc">—</b></div>
+      <div class="pvRow"><span>TRAIL</span><b id="pvTrail">—</b></div>
+      <div class="pvRow"><span>TRAIT</span><b id="pvTrait">—</b></div>
+      <div class="pvAnim">
+        <div><canvas id="pvIdle" width="24" height="24"></canvas><span>IDLE</span></div>
+        <div><canvas id="pvRun" width="24" height="24"></canvas><span>RUN</span></div>
+        <div><canvas id="pvJump" width="24" height="24"></canvas><span>JUMP</span></div>
+      </div>
+      <button class="pvBtn buy" id="pvBtn">SELECT A SKIN</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirm">
+  <div class="box">
+    <h2>CONFIRM PURCHASE</h2>
+    <p>Unlock <b id="cfName">—</b>?</p>
+    <p>Cost: <b id="cfCost">0</b> 🥕 &nbsp;·&nbsp; Balance after: <b id="cfAfter">0</b> 🥕</p>
+    <div class="row">
+      <button class="no" id="cfNo">CANCEL</button>
+      <button class="ok" id="cfOk">UNLOCK</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastEl"></div>
+
+<script>
+(() => {
+  "use strict";
+  const cvs = document.getElementById("game");
+  const ctx = cvs.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  const W = cvs.width, H = cvs.height;
+  const GROUND_Y = H - 44;
+  const sEl = document.getElementById("s");
+  const bEl = document.getElementById("b");
+  const cEl = document.getElementById("c");
+
+  function fit(){
+    const scale = Math.max(1, Math.min(Math.floor(innerWidth / W), Math.floor(innerHeight / H)));
+    cvs.style.width = (W*scale)+"px";
+    cvs.style.height = (H*scale)+"px";
+  }
+  addEventListener("resize", fit); fit();
+
+  // ---------- Audio ----------
+  let AC = null, muted = false;
+  function ac(){ if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
+  function beep(freq, dur=0.08, type="square", vol=0.06, slide=0){
+    if(muted) return;
+    const a = ac(); if(!a) return;
+    const t = a.currentTime;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq,t);
+    if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(20,freq+slide), t+dur);
+    g.gain.setValueAtTime(vol,t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t+dur+0.02);
+  }
+  const snd = {
+    jump:()=>beep(520,0.08,"square",0.05,240),
+    djump:()=>beep(700,0.09,"square",0.05,300),
+    land:()=>beep(180,0.05,"sine",0.04),
+    carrot:()=>{ beep(880,0.06,"triangle",0.06,220); setTimeout(()=>beep(1320,0.08,"triangle",0.05,0),60);},
+    hit:()=>beep(120,0.25,"sawtooth",0.09,-80),
+    shield:()=>beep(300,0.15,"sine",0.08,600),
+    buy:()=>{ beep(660,0.08,"square",0.06); setTimeout(()=>beep(990,0.09,"square",0.06),80); setTimeout(()=>beep(1320,0.14,"square",0.06),160);},
+    equip:()=>{ beep(520,0.06,"triangle",0.05); setTimeout(()=>beep(780,0.09,"triangle",0.05),60);},
+    deny:()=>beep(160,0.15,"sawtooth",0.06,-40),
+    start:()=>{ beep(440,0.08,"square",0.05); setTimeout(()=>beep(660,0.1,"square",0.05),90);},
+    tick:()=>beep(1200,0.02,"square",0.03),
+  };
+
+  // ---------- Pixel helpers ----------
+  function drawArt(g, rows, palette, dx, dy, scale=1){
+    for(let y=0;y<rows.length;y++){
+      const row = rows[y];
+      for(let x=0;x<row.length;x++){
+        const ch = row[x];
+        if(ch==='.'||ch===' ') continue;
+        const c = palette[ch]; if(!c) continue;
+        g.fillStyle = c;
+        g.fillRect((dx+x*scale)|0,(dy+y*scale)|0,scale,scale);
+      }
+    }
+  }
+
+  // ---------- Bunny sprite frames (16x16) ----------
+  const BUNNY_A = [
+    "....BB......BB..",
+    "...BTB......BTB.",
+    "...BTB......BTB.",
+    "...BBB......BBB.",
+    "....BBBBBBBBBB..",
+    "...BBBBBBBBBBBB.",
+    "..BBBEBBBBBEBBB.",
+    "..BBBBBBBNBBBBBB",
+    "..BBBBBAAABBBBBB",
+    "..BTBBBBBBBBBBT.",
+    "..BTTBBBBBBBBTT.",
+    "...BBBBBBBBBBBB.",
+    "....BBB....BBB..",
+    "...BBBB....BBBB.",
+    "...BTTB....BTTB.",
+    "................",
+  ];
+  const BUNNY_B = [
+    "....BB......BB..",
+    "...BTB......BTB.",
+    "...BTB......BTB.",
+    "...BBB......BBB.",
+    "....BBBBBBBBBB..",
+    "...BBBBBBBBBBBB.",
+    "..BBBEBBBBBEBBB.",
+    "..BBBBBBBNBBBBBB",
+    "..BBBBBAAABBBBBB",
+    "..BBBBBBBBBBBBBB",
+    "...BBBBBBBBBBBB.",
+    "..BBB........BBB",
+    ".BTTB........BTT",
+    "BTT............T",
+    "................",
+    "................",
+  ];
+  const BUNNY_JUMP = [
+    "....BB......BB..",
+    "...BTB......BTB.",
+    "...BTB......BTB.",
+    "...BBB......BBB.",
+    "....BBBBBBBBBB..",
+    "...BBBBBBBBBBBB.",
+    "..BBBEBBBBBEBBB.",
+    "..BBBBBBBNBBBBBB",
+    "..BBBBBAAABBBBBB",
+    "...BBBBBBBBBBBB.",
+    "....BBBBBBBBBB..",
+    "....BBB....BBB..",
+    "....BTB....BTB..",
+    "................",
+    "................",
+    "................",
+  ];
+  const BUNNY_IDLE = [ // subtle: ears slightly relaxed
+    "....BB......BB..",
+    "....BB......BB..",
+    "...BTB......BTB.",
+    "...BBB......BBB.",
+    "....BBBBBBBBBB..",
+    "...BBBBBBBBBBBB.",
+    "..BBBEBBBBBEBBB.",
+    "..BBBBBBBNBBBBBB",
+    "..BBBBBAAABBBBBB",
+    "...BBBBBBBBBBBB.",
+    "..BBBBBBBBBBBBB.",
+    "..BTB........BTB",
+    "..BTB........BTB",
+    "..BBB........BBB",
+    "................",
+    "................",
+  ];
+
+  // ---------- Skins (60 total, cap 750 carrots) ----------
+  const RARITY = {
+    common:  { name:"COMMON",    color:"#b8c3d1", rank:0 },
+    uncommon:{ name:"UNCOMMON",  color:"#5fd47a", rank:1 },
+    rare:    { name:"RARE",      color:"#4aa8ff", rank:2 },
+    epic:    { name:"EPIC",      color:"#c470ff", rank:3 },
+    legend:  { name:"LEGENDARY", color:"#ffb84d", rank:4 },
+    mythic:  { name:"MYTHIC",    color:"#ff3b7a", rank:5 },
+  };
+
+  // Fields: id, name, r, price, pal, acc, trail, desc, lore, traits{...}
+  // Traits — passive:  startCarrots, scoreBonus, luckyStart, coyoteMs, smallHitbox,
+  //                    fortune, fireShrink, carrotRain, lowGrav, highJump, magnet,
+  //                    doubleJump, tripleJump, shieldStart, floatFall, autoBurn,
+  //                    carrotHeal, phoenix
+  // Traits — active {kind, cd, dur}: timeWarp, thunder, void, shadowDash, nature,
+  //                    freeze, solarBurst, clones, ceiling, portal, rainbow,
+  //                    shieldRegen, dashStrike, magnetPulse, blink
+  const SKINS = [
+    // ============ COMMON (15) — small useful buffs ============
+    {id:"classic",name:"Classic Bunny",r:"common",price:0,pal:{B:"#fdfdfd",T:"#ffb0c4",E:"#141422",N:"#ff5c8a",A:"#e2e2ea"},acc:"none",trail:"none",desc:"The original hop-along hero.",lore:"First out of the burrow at dawn."},
+    {id:"gray",name:"Meadow Gray",r:"common",price:15,pal:{B:"#c8ccd4",T:"#8b8fa0",E:"#141422",N:"#d97a95",A:"#a8adb8"},acc:"none",trail:"pixels",desc:"Wakes with 2 carrots in pocket.",lore:"Never leaves home unprepared.",traits:{startCarrots:2}},
+    {id:"brown",name:"Chestnut",r:"common",price:25,pal:{B:"#8a5a3a",T:"#5a3a20",E:"#141422",N:"#c67854",A:"#a97245"},acc:"none",trail:"leaves",desc:"Trail-worn boots. Starts with 3 carrots.",lore:"Follows every dirt path east.",traits:{startCarrots:3}},
+    {id:"cream",name:"Vanilla",r:"common",price:30,pal:{B:"#f6ecd0",T:"#d9c48a",E:"#3a2820",N:"#c9986a",A:"#e6d7a8"},acc:"none",trail:"none",desc:"Warm calm. +5% score income.",lore:"Runs the same loop each morning.",traits:{scoreBonus:1.05}},
+    {id:"sunny",name:"Sunny",r:"common",price:35,pal:{B:"#ffe27a",T:"#e0a020",E:"#141422",N:"#ff5c8a",A:"#fff2b0"},acc:"headphones",trail:"pixels",desc:"Hums while hopping. +8% score.",lore:"Never runs without a tune.",traits:{scoreBonus:1.08}},
+    {id:"peach",name:"Peach Fuzz",r:"common",price:40,pal:{B:"#ffc89a",T:"#e08a5a",E:"#3a1a10",N:"#c8442a",A:"#ffdcb4"},acc:"bow",trail:"petals",desc:"First 2 seconds obstacle-free.",lore:"Kind flames give a head start.",traits:{luckyStart:2}},
+    {id:"mint",name:"Mint Sprig",r:"common",price:45,pal:{B:"#a8e8c8",T:"#5abf90",E:"#1a2a20",N:"#ff5c8a",A:"#d4f4e0"},acc:"scarf",trail:"pixels",desc:"First 3 seconds obstacle-free.",lore:"Smells of gardens and cold water.",traits:{luckyStart:3}},
+    {id:"blue",name:"Frost Kit",r:"common",price:50,pal:{B:"#c8e0ff",T:"#6a90c8",E:"#141422",N:"#4aa8ff",A:"#e0edff"},acc:"scarf",trail:"snow",desc:"+120ms coyote jump grace.",lore:"Slides gracefully off any ledge.",traits:{coyoteMs:0.12}},
+    {id:"pink",name:"Bubblegum",r:"common",price:55,pal:{B:"#ffb8d8",T:"#ff5c8a",E:"#3a1a2a",N:"#c8006a",A:"#ffe0ec"},acc:"bow",trail:"hearts",desc:"A heart drops a carrot every 18s.",lore:"Sugar-dusted, doe-eyed, kind.",traits:{carrotRain:18}},
+    {id:"black",name:"Onyx",r:"common",price:60,pal:{B:"#20222a",T:"#3a3d48",E:"#ffe27a",N:"#7a3040",A:"#4a4d58"},acc:"none",trail:"smoke",desc:"Slips fire by 10% (smaller hitbox).",lore:"A shadow with brighter eyes.",traits:{smallHitbox:0.9}},
+    {id:"berry",name:"Berrybite",r:"common",price:65,pal:{B:"#8a2a55",T:"#5a1a35",E:"#ffe27a",N:"#ff3b7a",A:"#c04070"},acc:"bandana",trail:"hearts",desc:"+10% carrot fortune.",lore:"Purple-stained by wild summer.",traits:{fortune:1.10}},
+    {id:"sky",name:"Sky Hopper",r:"common",price:70,pal:{B:"#a8d8ff",T:"#5a9ae0",E:"#141422",N:"#ff5c8a",A:"#e6f2ff"},acc:"scarf",trail:"bubbles",desc:"Air is thinner. 6% lower gravity.",lore:"Cloud-touched fur, kite-light.",traits:{lowGrav:0.94}},
+    {id:"forest",name:"Forest Ranger",r:"common",price:75,pal:{B:"#3a6a3a",T:"#254a25",E:"#141422",N:"#c67854",A:"#7bb04a"},acc:"scarf",trail:"leaves",desc:"Fires look 10% smaller.",lore:"Knows where every ember hides.",traits:{fireShrink:0.9}},
+    {id:"violet",name:"Violet Dusk",r:"common",price:85,pal:{B:"#8a5ad8",T:"#5a2a90",E:"#ffe27a",N:"#ff5c8a",A:"#b088ff"},acc:"scarf",trail:"stars",desc:"Twilight speed. +12% score.",lore:"Runs between the two suns.",traits:{scoreBonus:1.12}},
+    {id:"clay",name:"Clay Kit",r:"common",price:90,pal:{B:"#c47a4a",T:"#8b4520",E:"#141422",N:"#ffb066",A:"#e0996a"},acc:"none",trail:"pixels",desc:"Springy hocks. +6% jump power.",lore:"Formed from riverbank mud.",traits:{highJump:1.06}},
+
+    // ============ UNCOMMON (15) — noticeable buffs ============
+    {id:"lava",name:"Cinder",r:"uncommon",price:100,pal:{B:"#c8442a",T:"#7a1a10",E:"#ffe27a",N:"#ffb84d",A:"#ff8b28"},acc:"none",trail:"fire",desc:"+25% carrot fortune.",lore:"Fur that glows at the tips.",traits:{fortune:1.25}},
+    {id:"seafoam",name:"Seafoam",r:"uncommon",price:110,pal:{B:"#a8f0e0",T:"#5abfb0",E:"#1a2a30",N:"#ff5c8a",A:"#d0f8ee"},acc:"bandana",trail:"bubbles",desc:"+200ms coyote & floaty landing.",lore:"Salt-kissed and tide-timed.",traits:{coyoteMs:0.2,floatFall:0.85}},
+    {id:"tan",name:"Dune Runner",r:"uncommon",price:115,pal:{B:"#e6c48a",T:"#a87a3a",E:"#141422",N:"#c8442a",A:"#f0d8a8"},acc:"bandana",trail:"pixels",desc:"Desert cache. +6 starting carrots.",lore:"Buries a carrot every mile.",traits:{startCarrots:6}},
+    {id:"moss",name:"Moss Coat",r:"uncommon",price:120,pal:{B:"#5a7a3a",T:"#2f4a20",E:"#ffe27a",N:"#c8a04a",A:"#8bbb5a"},acc:"scarf",trail:"leaves",desc:"+35% carrot fortune.",lore:"Ancient roots, kind luck.",traits:{fortune:1.35}},
+    {id:"chef",name:"Chef Truffle",r:"uncommon",price:125,pal:{B:"#fdfdfd",T:"#e6b078",E:"#141422",N:"#ff5c8a",A:"#c67854"},acc:"hat",trail:"petals",desc:"A carrot drops every 12s.",lore:"Runs with a wooden spoon.",traits:{carrotRain:12}},
+    {id:"pirate",name:"Captain Ears",r:"uncommon",price:130,pal:{B:"#c8ccd4",T:"#8b3020",E:"#141422",N:"#8b3020",A:"#ffe27a"},acc:"hat",trail:"none",desc:"Buried treasure: +10 starting carrots.",lore:"Yo ho, bunny ho.",traits:{startCarrots:10}},
+    {id:"disco",name:"Disco Bun",r:"uncommon",price:135,pal:{B:"#c470ff",T:"#ffb84d",E:"#ffe27a",N:"#ff3b7a",A:"#4aa8ff"},acc:"glasses",trail:"stars",desc:"Groove bonus. +20% score.",lore:"Runs to a beat only it hears.",traits:{scoreBonus:1.20}},
+    {id:"detective",name:"Sleuth",r:"uncommon",price:140,pal:{B:"#a08060",T:"#604030",E:"#141422",N:"#3a2820",A:"#c9a878"},acc:"monocle",trail:"smoke",desc:"Notices carrots: +18% fortune, +6 start.",lore:"Elementary hops.",traits:{fortune:1.18,startCarrots:6}},
+    {id:"snow",name:"Snow Prince",r:"uncommon",price:145,pal:{B:"#f4f8ff",T:"#8ac0ff",E:"#4aa8ff",N:"#4aa8ff",A:"#e0eeff"},acc:"crown",trail:"snow",desc:"Fires 18% smaller.",lore:"Frost heir of quiet winter.",traits:{fireShrink:0.82}},
+    {id:"samurai",name:"Bushido",r:"uncommon",price:150,pal:{B:"#e6d7a8",T:"#8b3020",E:"#141422",N:"#8b3020",A:"#c8442a"},acc:"headband",trail:"petals",desc:"Discipline: 20% smaller hitbox.",lore:"Silent, steady, sharp.",traits:{smallHitbox:0.8}},
+    {id:"witch",name:"Witchling",r:"uncommon",price:155,pal:{B:"#3a2a4a",T:"#8a4bd8",E:"#7bff9a",N:"#ff5c8a",A:"#c470ff"},acc:"hat",trail:"stars",desc:"Hex: a carrot every 10s.",lore:"Suspicious grin, useful spells.",traits:{carrotRain:10}},
+    {id:"aqua",name:"Reef Hopper",r:"uncommon",price:160,pal:{B:"#4ac8d8",T:"#1a6a80",E:"#ffe27a",N:"#ff5c8a",A:"#a0ecf4"},acc:"crown",trail:"bubbles",desc:"Buoyant fur. 10% lower gravity.",lore:"Coral crowned, tide-tuned.",traits:{lowGrav:0.9}},
+    {id:"jelly",name:"Jellybun",r:"uncommon",price:165,pal:{B:"#c470ff",T:"#8a3ad8",E:"#ffe27a",N:"#ff5c8a",A:"#e0b8ff"},acc:"antenna",trail:"bubbles",desc:"Hold jump to float — soft descent.",lore:"Wobbly, glowing, patient.",traits:{floatFall:0.55}},
+    {id:"emperor",name:"Emperor",r:"uncommon",price:170,pal:{B:"#8b0020",T:"#ffe27a",E:"#ffe27a",N:"#ffe27a",A:"#ffb84d"},acc:"crown",trail:"sparkle",desc:"Royal decree. +25% score.",lore:"A crown of a hundred hops.",traits:{scoreBonus:1.25}},
+    {id:"cloud",name:"Cloudweaver",r:"uncommon",price:180,pal:{B:"#fdfdfd",T:"#a8c8f8",E:"#4aa8ff",N:"#ff5c8a",A:"#e0eeff"},acc:"wings",trail:"snow",desc:"Feather-light. 12% lower gravity + float.",lore:"Sewn from summer sky.",traits:{lowGrav:0.88,floatFall:0.75}},
+
+    // ============ RARE (12) — powerful w/ visual effects ============
+    {id:"cyber",name:"Cyberpunk Bunny",r:"rare",price:190,pal:{B:"#2a1050",T:"#ff2bd6",E:"#00f0ff",N:"#00f0ff",A:"#ffd400"},acc:"glasses",trail:"lightning",desc:"Neon magnet pulls carrots from 50px.",lore:"Rewired paws, rewritten luck.",traits:{magnet:50}},
+    {id:"ninja",name:"Ninja Bunny",r:"rare",price:210,pal:{B:"#20222a",T:"#c8000f",E:"#ffffff",N:"#c8000f",A:"#c8000f"},acc:"bandana",trail:"smoke",desc:"Double jump — kick off the air.",lore:"Silent shadow, one clean cut.",traits:{doubleJump:true}},
+    {id:"knight",name:"Iron Knight",r:"rare",price:225,pal:{B:"#8a8fa0",T:"#4a4d58",E:"#4aa8ff",N:"#3a3d48",A:"#c8ccd4"},acc:"armor",trail:"pixels",desc:"Starts with a 1-hit shield.",lore:"Cold steel, warm resolve.",traits:{shieldStart:1}},
+    {id:"punk",name:"Punk Rocker",r:"rare",price:235,pal:{B:"#20222a",T:"#ff3b7a",E:"#ffe27a",N:"#ff3b7a",A:"#c470ff"},acc:"mohawk",trail:"lightning",desc:"Amplified: +30% score & jump.",lore:"Loud fur, louder attitude.",traits:{scoreBonus:1.3,highJump:1.12}},
+    {id:"vampire",name:"Vampyr",r:"rare",price:250,pal:{B:"#20222a",T:"#8b0020",E:"#ff3b7a",N:"#ff3b7a",A:"#3a1a2a"},acc:"cape",trail:"smoke",desc:"Every 10 carrots regenerates 1 shield (max 1).",lore:"Nocturnal, patient, hungry.",traits:{carrotHeal:10}},
+    {id:"hacker",name:"Glitch Runner",r:"rare",price:265,pal:{B:"#0a1a2a",T:"#00f0ff",E:"#ff2bd6",N:"#00f0ff",A:"#7bff9a"},acc:"glasses",trail:"lightning",desc:"Extended magnet 80px + carrot every 14s.",lore:"Terminal fur, static whiskers.",traits:{magnet:80,carrotRain:14}},
+    {id:"shogun",name:"Shogun",r:"rare",price:280,pal:{B:"#20222a",T:"#c8000f",E:"#ffe27a",N:"#c8000f",A:"#ffb84d"},acc:"armor",trail:"petals",desc:"Blade of the sky: double jump + 15% higher.",lore:"Lacquered armor, rising sun.",traits:{doubleJump:true,highJump:1.15}},
+    {id:"paladin",name:"Paladin",r:"rare",price:295,pal:{B:"#fdfdfd",T:"#ffb84d",E:"#4aa8ff",N:"#ff5c8a",A:"#ffe27a"},acc:"armor",trail:"sparkle",desc:"Holy plating: starts with 2 shields.",lore:"Righteous plate, quiet light.",traits:{shieldStart:2}},
+    {id:"dragon",name:"Dragonling",r:"rare",price:305,pal:{B:"#3a6a3a",T:"#1a4020",E:"#ffe27a",N:"#c8442a",A:"#ffb84d"},acc:"horns",trail:"fire",desc:"Auto-burns nearest obstacle every 9s.",lore:"Smoky whiskers, scaled cheeks.",traits:{autoBurn:9}},
+    {id:"cosmic",name:"Cosmonaut",r:"rare",price:315,pal:{B:"#1a1050",T:"#4a3ad0",E:"#ffe27a",N:"#ff5c8a",A:"#c470ff"},acc:"helmet",trail:"stars",desc:"Zero-G bones + tripled coyote grace.",lore:"Carries a little universe.",traits:{lowGrav:0.82,coyoteMs:0.25}},
+    {id:"demon",name:"Impkin",r:"rare",price:320,pal:{B:"#7a1a30",T:"#3a0a1a",E:"#ffe27a",N:"#ff3b7a",A:"#c8442a"},acc:"horns",trail:"fire",desc:"Wicked luck: fortune 1.6× & carrots keep score.",lore:"Small, sharp, delighted.",traits:{fortune:1.6,chainBonus:true}},
+    {id:"lich",name:"Lich",r:"rare",price:320,pal:{B:"#5abfb0",T:"#1a4a48",E:"#7bff9a",N:"#c470ff",A:"#3a6a68"},acc:"crown",trail:"smoke",desc:"Undying breath: 2 shields + auto-burn 14s.",lore:"Cold bones, colder crown.",traits:{shieldStart:2,autoBurn:14}},
+
+    // ============ EPIC (9) — game-changing w/ cooldowns ============
+    {id:"astro",name:"Astronaut Bunny",r:"epic",price:335,pal:{B:"#e6ecff",T:"#8aa4ff",E:"#141422",N:"#ff5c8a",A:"#88f0ff"},acc:"helmet",trail:"stars",desc:"Zero-G: triple jump enabled.",lore:"Reduced gravity, endless sky.",traits:{lowGrav:0.75,tripleJump:true}},
+    {id:"angel",name:"Halo Hopper",r:"epic",price:360,pal:{B:"#fdfdfd",T:"#ffe27a",E:"#4aa8ff",N:"#ff5c8a",A:"#fff2b0"},acc:"halo",trail:"sparkle",desc:"[E] Restore a shield. CD 18s.",lore:"A hush of feathers.",traits:{shieldStart:1,active:{kind:"shieldRegen",cd:18,dur:0.3}}},
+    {id:"phoenix",name:"Phoenix Kit",r:"epic",price:385,pal:{B:"#ff8b28",T:"#c8442a",E:"#ffe27a",N:"#ffe27a",A:"#ffe27a"},acc:"wings",trail:"fire",desc:"[E] Dash-strike: destroy fires in a 60px path. CD 14s.",lore:"Wings of embers.",traits:{active:{kind:"dashStrike",cd:14,dur:0.35,dist:70}}},
+    {id:"robot",name:"Circuit Bun",r:"epic",price:410,pal:{B:"#8a8fa0",T:"#4a4d58",E:"#7bff9a",N:"#00f0ff",A:"#ffe27a"},acc:"antenna",trail:"lightning",desc:"[E] Magnet Pulse: yank every carrot. CD 12s.",lore:"Servos hum, LEDs blink.",traits:{magnet:60,active:{kind:"magnetPulse",cd:12,dur:0.5}}},
+    {id:"prism",name:"Prism",r:"epic",price:435,pal:{B:"#e0f0ff",T:"#a8c8f8",E:"#141422",N:"#ff5c8a",A:"#c470ff"},acc:"glasses",trail:"rainbow",desc:"[E] Blink: teleport 90px forward. CD 15s.",lore:"Runs the light.",traits:{active:{kind:"blink",cd:15,dur:0.2,dist:90}}},
+    {id:"seraph",name:"Seraph",r:"epic",price:460,pal:{B:"#ffe27a",T:"#ffb84d",E:"#4aa8ff",N:"#ff5c8a",A:"#fff2b0"},acc:"wings",trail:"sparkle",desc:"Six-winged: hold to float + [E] Shield. CD 20s.",lore:"Its shadow is another light.",traits:{floatFall:0.5,active:{kind:"shieldRegen",cd:20,dur:0.3}}},
+    {id:"kraken",name:"Kraken",r:"epic",price:475,pal:{B:"#1a2a5a",T:"#0a0a2a",E:"#ffe27a",N:"#c470ff",A:"#4ac8d8"},acc:"crown",trail:"bubbles",desc:"[E] Tentacle sweep: freeze obstacles 3s. CD 20s.",lore:"Ruler of the trench.",traits:{active:{kind:"freeze",cd:20,dur:3}}},
+    {id:"lava_lord",name:"Magma Lord",r:"epic",price:490,pal:{B:"#7a1a10",T:"#ffe27a",E:"#ffe27a",N:"#ffe27a",A:"#ff8b28"},acc:"crown",trail:"fire",desc:"[E] Ember Nova: burn nearest 3 obstacles. CD 16s.",lore:"Cracked obsidian veined in gold.",traits:{active:{kind:"thunder",cd:16,dur:0.5,count:3,fx:"fire"}}},
+    {id:"pirate_ghost",name:"Ghost Captain",r:"epic",price:500,pal:{B:"#a8e0f0",T:"#5a8098",E:"#ffe27a",N:"#8aa8b8",A:"#d0f0ff"},acc:"hat",trail:"smoke",desc:"[E] Phase 2s: run through fire. CD 18s.",lore:"Sails on a tide of fog.",traits:{active:{kind:"void",cd:18,dur:2}}},
+
+    // ============ LEGENDARY (6) — spectacular ============
+    {id:"wizard",name:"Wizard Bunny",r:"legend",price:515,pal:{B:"#efe6ff",T:"#8a4bd8",E:"#141422",N:"#ff5c8a",A:"#ffe14a"},acc:"hat",trail:"sparkle",desc:"Perma-shield: regenerates every 20s. Start w/ 1.",lore:"The oldest spell: keep going.",traits:{shieldStart:1,active:{kind:"shieldRegen",cd:20,dur:0.3,auto:true}}},
+    {id:"golden",name:"Golden Bunny",r:"legend",price:550,pal:{B:"#ffd94a",T:"#c98800",E:"#141422",N:"#a86400",A:"#fff2a0"},acc:"crown",trail:"sparkle",desc:"Midas Touch: 2× fortune + carrot every 8s.",lore:"Solid gold fur, softer heart.",traits:{fortune:2,carrotRain:8}},
+    {id:"thunder_god",name:"Thunder God",r:"legend",price:585,pal:{B:"#ffe27a",T:"#4a3ad0",E:"#00f0ff",N:"#ff2bd6",A:"#fff2b0"},acc:"crown",trail:"lightning",desc:"[E] LIGHTNING: destroys ALL onscreen obstacles. CD 22s.",lore:"Storms bow when it hops.",traits:{active:{kind:"thunder",cd:22,dur:0.6,count:99,fx:"lightning"}}},
+    {id:"nature_king",name:"Nature King",r:"legend",price:610,pal:{B:"#3a6a3a",T:"#1a4020",E:"#ffe27a",N:"#c8442a",A:"#88e05a"},acc:"crown",trail:"leaves",desc:"[E] Call of the Wild: pulls every carrot to you. CD 15s.",lore:"Roots wake when it runs.",traits:{active:{kind:"nature",cd:15,dur:0.4}}},
+    {id:"celestial",name:"Celestial",r:"legend",price:635,pal:{B:"#f8f5e6",T:"#ffb84d",E:"#4aa8ff",N:"#ff5c8a",A:"#ffe27a"},acc:"wings",trail:"rainbow",desc:"[E] Solar Burst: clears the screen in radiant flame. CD 26s.",lore:"Morning star, feathered gold.",traits:{active:{kind:"solarBurst",cd:26,dur:0.9}}},
+    {id:"rainbowx",name:"Prismatica",r:"legend",price:650,pal:{B:"#ff5c8a",T:"#ffb84d",E:"#141422",N:"#4aa8ff",A:"#7bff9a"},acc:"crown",trail:"rainbow",desc:"[E] Rainbow Frenzy: 4s invincibility w/ rainbow trail. CD 24s.",lore:"Every hop paints another arc.",traits:{active:{kind:"rainbow",cd:24,dur:4}}},
+
+    // ============ MYTHIC (3) — cinematic super powers ============
+    {id:"phoenix_myth",name:"Phoenix Ascendant",r:"mythic",price:680,pal:{B:"#ffb84d",T:"#c8442a",E:"#ffe27a",N:"#ffe27a",A:"#ffe27a"},acc:"wings",trail:"fire",desc:"Revive once per run in a firestorm — 2s of blazing invincibility.",lore:"Death is a doorway, not an end.",traits:{phoenix:true}},
+    {id:"chrono_myth",name:"Chronos",r:"mythic",price:720,pal:{B:"#c470ff",T:"#4a1a80",E:"#ffe27a",N:"#00f0ff",A:"#ffb84d"},acc:"halo",trail:"sparkle",desc:"[E] Time Warp: world slows to a crawl for 4s. CD 22s.",lore:"Wears the hours as a halo.",traits:{active:{kind:"timeWarp",cd:22,dur:4}}},
+    {id:"void_myth",name:"Void Sovereign",r:"mythic",price:750,pal:{B:"#0a0518",T:"#3a1a5a",E:"#c470ff",N:"#ff3b7a",A:"#8a4bd8"},acc:"horns",trail:"stars",desc:"[E] Void Walk: phase through everything for 3s. CD 20s.",lore:"A silhouette punched from night.",traits:{active:{kind:"void",cd:20,dur:3,mythic:true}}},
+  ];
+  const SKIN_BY_ID = Object.fromEntries(SKINS.map(s=>[s.id,s]));
+
+  // ---------- Accessory drawer ----------
+  function drawAcc(g, sk, dx, dy){
+    const a = sk.acc, pal = sk.pal;
+    switch(a){
+      case "glasses":
+        g.fillStyle = sk.pal.A;
+        g.fillRect(dx+3, dy+6, 10, 2);
+        g.fillStyle = sk.pal.E;
+        g.fillRect(dx+4, dy+7, 2, 1); g.fillRect(dx+10, dy+7, 2, 1);
+        break;
+      case "monocle":
+        g.strokeStyle = "#ffe27a"; g.lineWidth=1;
+        g.strokeRect(dx+9.5, dy+5.5, 4, 4);
+        g.fillStyle = "#ffe27a"; g.fillRect(dx+13, dy+9, 1, 2);
+        break;
+      case "bow":
+        g.fillStyle = "#ff3b7a";
+        g.fillRect(dx+2, dy-1, 2, 2); g.fillRect(dx+6, dy-1, 2, 2);
+        g.fillRect(dx+3, dy, 4, 1);
+        g.fillStyle = "#ffb0c4"; g.fillRect(dx+4, dy, 2, 1);
+        break;
+      case "crown":
+        g.fillStyle = "#ffd94a";
+        g.fillRect(dx+3, dy-2, 10, 2);
+        g.fillRect(dx+3, dy-4, 2, 2); g.fillRect(dx+7, dy-4, 2, 2); g.fillRect(dx+11, dy-4, 2, 2);
+        g.fillStyle = "#ff3b7a"; g.fillRect(dx+7, dy-1, 2, 1);
+        g.fillStyle = "#4aa8ff"; g.fillRect(dx+3, dy-1, 1, 1); g.fillRect(dx+12, dy-1, 1, 1);
+        break;
+      case "hat": // wizard/witch/chef/pirate style
+        if(sk.id==="chef"){
+          g.fillStyle="#fdfdfd";
+          g.fillRect(dx+3,dy-1,10,2); g.fillRect(dx+4,dy-4,8,3);
+          g.fillRect(dx+3,dy-6,3,3); g.fillRect(dx+7,dy-7,3,3); g.fillRect(dx+11,dy-6,3,3);
+        } else if(sk.id==="pirate"){
+          g.fillStyle="#20222a";
+          g.fillRect(dx+1,dy-1,14,2);
+          g.fillRect(dx+3,dy-4,10,3);
+          g.fillStyle="#ffe27a"; g.fillRect(dx+7,dy-3,2,2);
+        } else {
+          const c1 = sk.id==="witch"?"#20222a":"#4a1d80";
+          const c2 = sk.id==="witch"?"#8a4bd8":"#ffe14a";
+          g.fillStyle=c1;
+          g.fillRect(dx+2, dy-1, 12, 1);
+          g.fillRect(dx+4, dy-3, 8, 2);
+          g.fillRect(dx+5, dy-5, 6, 2);
+          g.fillRect(dx+6, dy-7, 4, 2);
+          g.fillStyle=c2; g.fillRect(dx+7, dy-8, 2, 1);
+        }
+        break;
+      case "helmet":
+        g.strokeStyle="rgba(180,220,255,0.9)"; g.lineWidth=1;
+        g.strokeRect(dx+1, dy+3, 14, 10);
+        g.fillStyle="rgba(180,220,255,0.18)";
+        g.fillRect(dx+2, dy+4, 12, 8);
+        g.fillStyle="#88f0ff"; g.fillRect(dx+11, dy+4, 2, 2);
+        break;
+      case "halo":
+        g.strokeStyle="#ffe27a"; g.lineWidth=1;
+        g.beginPath(); g.ellipse(dx+8, dy-1, 6, 2, 0, 0, Math.PI*2); g.stroke();
+        g.fillStyle="#fff2b0"; g.fillRect(dx+7, dy-2, 2, 1);
+        break;
+      case "horns":
+        g.fillStyle=pal.T;
+        g.fillRect(dx+3, dy-2, 2, 2); g.fillRect(dx+11, dy-2, 2, 2);
+        g.fillRect(dx+4, dy-1, 1, 1); g.fillRect(dx+11, dy-1, 1, 1);
+        break;
+      case "antenna":
+        g.fillStyle=pal.A;
+        g.fillRect(dx+8, dy-3, 1, 3);
+        g.fillStyle="#ffe27a"; g.fillRect(dx+7, dy-5, 3, 2);
+        break;
+      case "wings":
+        g.fillStyle=pal.A;
+        g.fillRect(dx-2, dy+6, 3, 4); g.fillRect(dx-1, dy+5, 2, 6);
+        g.fillRect(dx+15, dy+6, 3, 4); g.fillRect(dx+15, dy+5, 2, 6);
+        break;
+      case "scarf":
+        g.fillStyle=pal.A;
+        g.fillRect(dx+2, dy+10, 12, 2);
+        g.fillRect(dx+2, dy+12, 3, 3);
+        break;
+      case "bandana":
+        g.fillStyle=pal.A;
+        g.fillRect(dx+2, dy+6, 12, 2);
+        g.fillRect(dx+1, dy+7, 2, 3);
+        break;
+      case "headband":
+        g.fillStyle=pal.A;
+        g.fillRect(dx+2, dy+6, 12, 2);
+        g.fillStyle="#fff"; g.fillRect(dx+7, dy+6, 2, 2);
+        break;
+      case "mohawk":
+        g.fillStyle=pal.A;
+        for(let i=0;i<5;i++) g.fillRect(dx+6+i, dy-1-i, 4-i, 1);
+        break;
+      case "cape":
+        g.fillStyle=pal.A;
+        g.fillRect(dx+2, dy+4, 12, 10);
+        g.fillStyle=pal.T; g.fillRect(dx+2, dy+4, 12, 1);
+        break;
+      case "armor":
+        g.fillStyle=pal.A;
+        g.fillRect(dx+3, dy+8, 10, 5);
+        g.fillStyle=pal.T; g.fillRect(dx+3, dy+8, 10, 1);
+        g.fillStyle="#fff8"; g.fillRect(dx+5, dy+9, 1, 2);
+        break;
+      case "headphones":
+        g.fillStyle=pal.A;
+        g.fillRect(dx+2, dy+5, 2, 4); g.fillRect(dx+12, dy+5, 2, 4);
+        g.fillRect(dx+3, dy+3, 10, 1);
+        break;
+      case "none": default: break;
+    }
+  }
+
+  // ---------- Trail particles ----------
+  function trailEmit(sk, particles, x, y, moving){
+    if(!moving) return;
+    if(Math.random()>0.35) return;
+    const t = sk.trail;
+    switch(t){
+      case "fire":
+        particles.push({x,y,vx:-40-Math.random()*30,vy:-20-Math.random()*20,life:.4+Math.random()*.3,c:Math.random()<.5?"#ff8b28":"#ffe27a",size:2,kind:"trail"}); break;
+      case "sparkle":
+        particles.push({x,y:y-Math.random()*10,vx:-30-Math.random()*20,vy:-Math.random()*20,life:.5+Math.random()*.4,c:Math.random()<.5?"#fff2b0":"#ffb84d",size:1,kind:"trail"}); break;
+      case "hearts":
+        particles.push({x,y:y-4,vx:-20-Math.random()*20,vy:-30-Math.random()*10,life:.6,c:"#ff5c8a",size:2,kind:"heart"}); break;
+      case "snow":
+        particles.push({x,y:y-Math.random()*8,vx:-15-Math.random()*15,vy:5+Math.random()*10,life:.8,c:"#e0eeff",size:1,kind:"trail"}); break;
+      case "leaves":
+        particles.push({x,y:y-2,vx:-25-Math.random()*20,vy:-5-Math.random()*10,life:.9,c:Math.random()<.5?"#5abf90":"#c8a04a",size:2,kind:"trail"}); break;
+      case "bubbles":
+        particles.push({x,y:y-4,vx:-15,vy:-20-Math.random()*10,life:.8,c:"#a8f0e0",size:2,kind:"bubble"}); break;
+      case "stars":
+        particles.push({x,y:y-Math.random()*12,vx:-30-Math.random()*20,vy:-Math.random()*10,life:.7,c:Math.random()<.5?"#fff":"#c470ff",size:1,kind:"trail"}); break;
+      case "lightning":
+        particles.push({x,y,vx:-60,vy:0,life:.15,c:"#00f0ff",size:2,kind:"trail"}); break;
+      case "smoke":
+        particles.push({x,y:y-2,vx:-20-Math.random()*10,vy:-10-Math.random()*10,life:.7,c:"#8b8fa0",size:2,kind:"trail"}); break;
+      case "rainbow":
+        const cols=["#ff3b7a","#ffb84d","#ffe27a","#5fd47a","#4aa8ff","#c470ff"];
+        particles.push({x,y,vx:-30,vy:-Math.random()*15,life:.6,c:cols[(Math.random()*6)|0],size:2,kind:"trail"}); break;
+      case "pixels":
+        particles.push({x,y,vx:-20-Math.random()*20,vy:-Math.random()*10,life:.4,c:sk.pal.T,size:1,kind:"trail"}); break;
+      case "petals":
+        particles.push({x,y:y-Math.random()*8,vx:-20-Math.random()*10,vy:-Math.random()*10,life:.9,c:Math.random()<.5?"#ffb0c4":"#ff5c8a",size:2,kind:"trail"}); break;
+    }
+  }
+  function drawTrailParticle(g, p){
+    g.globalAlpha = Math.max(0, Math.min(1, p.life*1.5));
+    if(p.kind==="heart"){
+      g.fillStyle = p.c;
+      g.fillRect(p.x, p.y+1, 3, 2);
+      g.fillRect(p.x, p.y, 1, 1); g.fillRect(p.x+2, p.y, 1, 1);
+      g.fillRect(p.x+1, p.y+3, 1, 1);
+    } else if(p.kind==="bubble"){
+      g.strokeStyle = p.c; g.lineWidth=1;
+      g.strokeRect(p.x, p.y, 2, 2);
+    } else {
+      g.fillStyle = p.c;
+      g.fillRect(p.x|0, p.y|0, p.size, p.size);
+    }
+    g.globalAlpha = 1;
+  }
+
+  // ---------- Carrot & fire ----------
+  const CARROT_PAL = { O:"#ff8b28", o:"#ffb066", D:"#c25611", G:"#3fbf4a", g:"#2f8f39" };
+  const CARROT = [
+    "....G.g...","...GgGg...","..gG.Gg...","...GgG....","....O.....",
+    "...OoO....","..OooOO...","..OooOD...","..OoOOD...","...OODD...","....OD....",".....D....",
+  ];
+  const FIRE_PAL = { Y:"#fff08a", O:"#ff9430", R:"#e63b1a", D:"#8a1a08", S:"#3a1a06" };
+  const FIRE_A = [
+    ".....YY.......","....YOY.......","...YOYY.......","...YOOO.YY....",
+    "..YOOOOOOY....",".YOOROOOOOY...",".YOROORROOO...","YOROORROROOY..",
+    "YOROORRORROY..","YOOROORRRROY..",".YORRRRRROY...",".YOORRRROY....",
+    "..YOORROY.....","...YOOOY......","....YOY.......","..............",
+    "SSSSSSSSSSSSSS","DDDDDDDDDDDDDD",
+  ];
+  const FIRE_B = [
+    "......YY......",".....YOY......","....YOOY......","....YOOOYY....",
+    "...YOOOOOY....","..YOOROOOOY...",".YOROORROOOY..",".YOROORRROOY..",
+    "YOROORRRROOY..","YOOROORRRROY..","YOORRRRRROOY..",".YOORRRROOY...",
+    "..YOORROOY....","..YOOOOY......","...YOOY.......","....YY........",
+    "SSSSSSSSSSSSSS","DDDDDDDDDDDDDD",
+  ];
+
+  // ---------- Persistence ----------
+  const LS = {best:"bunnyRunnerBest",carrots:"bunnyRunnerCarrots",owned:"bunnyRunnerOwned",equipped:"bunnyRunnerEquipped"};
+  let best = +(localStorage.getItem(LS.best)||0);
+  let carrotBank = +(localStorage.getItem(LS.carrots)||0);
+  let owned;
+  try { owned = JSON.parse(localStorage.getItem(LS.owned)||'["classic"]'); }
+  catch(e){ owned = ["classic"]; }
+  if(!owned.includes("classic")) owned.push("classic");
+  let equippedId = localStorage.getItem(LS.equipped) || "classic";
+  if(!SKIN_BY_ID[equippedId] || !owned.includes(equippedId)) equippedId = "classic";
+
+  function saveAll(){
+    localStorage.setItem(LS.best, best);
+    localStorage.setItem(LS.carrots, carrotBank);
+    localStorage.setItem(LS.owned, JSON.stringify(owned));
+    localStorage.setItem(LS.equipped, equippedId);
+    document.getElementById("shopBal").textContent = carrotBank;
+  }
+  bEl.textContent = best; cEl.textContent = carrotBank;
+  document.getElementById("shopBal").textContent = carrotBank;
+
+  // ---------- Parallax ----------
+  const stars = Array.from({length:60},()=>({x:Math.random()*W, y:Math.random()*(H-90), t:Math.random()*Math.PI*2}));
+  function makeMountains(color, seed, height){
+    const c = document.createElement("canvas");
+    c.width = W*2; c.height = H;
+    const g = c.getContext("2d");
+    g.fillStyle = color;
+    let x=0, r = seed;
+    const rand = ()=>{ r=(r*9301+49297)%233280; return r/233280; };
+    while(x < W*2){
+      const w = 40 + rand()*70|0;
+      const h = height*0.6 + rand()*height*0.4|0;
+      const cx = x + w/2;
+      g.beginPath(); g.moveTo(x, GROUND_Y);
+      g.lineTo(cx, GROUND_Y - h); g.lineTo(x + w, GROUND_Y);
+      g.closePath(); g.fill();
+      g.fillStyle = "#ffffff22";
+      g.beginPath(); g.moveTo(cx, GROUND_Y-h);
+      g.lineTo(cx-6, GROUND_Y-h+10); g.lineTo(cx+6, GROUND_Y-h+10);
+      g.closePath(); g.fill();
+      g.fillStyle = color; x += w - 10;
+    }
+    return c;
+  }
+  const mtnFarNight  = makeMountains("#2b1a44", 7, 60);
+  const mtnNearNight = makeMountains("#3d2359", 33, 90);
+  const mtnFarDay    = makeMountains("#6a7ca8", 7, 60);
+  const mtnNearDay   = makeMountains("#4a5d8a", 33, 90);
+  function makeGround(topA, topB, base, pebA, pebB){
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H - GROUND_Y;
+    const g = c.getContext("2d");
+    g.fillStyle = base; g.fillRect(0,0,c.width,c.height);
+    g.fillStyle = topA; g.fillRect(0,0,c.width,3);
+    g.fillStyle = topB; g.fillRect(0,0,c.width,1);
+    for(let i=0;i<40;i++){
+      const x = (Math.random()*c.width)|0;
+      const y = 5 + (Math.random()*(c.height-6))|0;
+      g.fillStyle = Math.random()<0.5?pebA:pebB;
+      g.fillRect(x,y,2,1);
+    }
+    return c;
+  }
+  const groundNight = makeGround("#5a2e5c","#84438a","#2a1732","#3d1f47","#4a2555");
+  const groundDay   = makeGround("#88b56a","#b6dc85","#3d6a35","#2f5228","#4a7a3c");
+
+  // ---------- Game state ----------
+  const S_MENU=0, S_PLAY=1, S_OVER=2, S_PAUSE=3, S_SHOP=4;
+  let state = S_MENU;
+  let bunny, obstacles, carrots, particles, fxParticles, speed, distance, score, carrotCount;
+  let scrollFar=0, scrollNear=0, scrollGround=0;
+  let spawnT=0, carrotT=0, frame=0, blink=0;
+  let scoreCarrotAcc = 0;
+  let dayNight = 1, dnTarget = 1, dnTrans = 0, lastCycleBucket = 0;
+  let shieldCount = 0, jumpsUsed = 0, maxJumps = 1;
+  // ability + trait runtime
+  let abilityCd = 0, abilityKind = null, abilityData = null, abilityMax = 0;
+  let luckyStartT = 0, carrotRainT = 0, autoBurnT = 0, carrotHealAcc = 0;
+  let coyoteT = 0;
+  let worldTimeMul = 1, worldTimeT = 0;
+  let invincibleT = 0, phoenixCharge = false, phoenixFxT = 0;
+  let freezeT = 0, rainbowT = 0, ghostT = 0;
+  let flashT = 0, flashCol = [255,255,255];
+  let screenShake = 0;
+  let ceilingT = 0; // reserved
+
+  function equippedSkin(){ return SKIN_BY_ID[equippedId] || SKINS[0]; }
+
+  function reset(){
+    const sk = equippedSkin();
+    const traits = sk.traits||{};
+    bunny = { x: 60, y: GROUND_Y-16, vy:0, w:12, h:16, onGround:true, animT:0 };
+    obstacles = []; carrots = []; particles = []; fxParticles = [];
+    speed = 90; distance = 0; score = 0; carrotCount = 0;
+    scoreCarrotAcc = 0; spawnT = 1.2; carrotT = 2.0; frame = 0;
+    lastCycleBucket = 0;
+    shieldCount = traits.shieldStart|0;
+    jumpsUsed = 0;
+    maxJumps = traits.tripleJump?3:(traits.doubleJump?2:1);
+    // ability
+    abilityKind = (traits.active && traits.active.kind) || null;
+    abilityData = traits.active || null;
+    abilityMax = abilityData ? abilityData.cd : 0;
+    abilityCd = 0; // ready at run start
+    // passive timers
+    luckyStartT = traits.luckyStart || 0;
+    carrotRainT = traits.carrotRain || 0;
+    autoBurnT = traits.autoBurn || 0;
+    carrotHealAcc = 0;
+    coyoteT = 0;
+    worldTimeMul = 1; worldTimeT = 0;
+    invincibleT = 0; phoenixFxT = 0;
+    phoenixCharge = !!traits.phoenix;
+    freezeT = 0; rainbowT = 0; ghostT = 0;
+    flashT = 0; screenShake = 0;
+    // one-time start carrots
+    if(state===S_PLAY && traits.startCarrots){ carrotBank += traits.startCarrots|0; saveAll(); cEl.textContent = carrotBank; }
+  }
+  reset();
+
+  // ---------- Input ----------
+  function tryJump(){
+    if(state===S_MENU){ state=S_PLAY; reset(); snd.start(); return; }
+    if(state===S_OVER){ reset(); state=S_PLAY; snd.start(); return; }
+    if(state===S_PAUSE){ state=S_PLAY; return; }
+    if(state===S_SHOP){ return; }
+    if(state===S_PLAY){
+      const traits = equippedSkin().traits||{};
+      const hj = traits.highJump || 1;
+      const canGround = bunny.onGround || coyoteT>0;
+      if(canGround){ bunny.vy=-235*hj; bunny.onGround=false; coyoteT=0; jumpsUsed=1; snd.jump(); }
+      else if(jumpsUsed<maxJumps){ bunny.vy=-215*hj; jumpsUsed++; snd.djump(); burst(bunny.x+6, bunny.y+16, "#ffffff",6); }
+    }
+  }
+  function tryAbility(){
+    if(state!==S_PLAY || !abilityKind || abilityCd>0.001) return;
+    triggerAbility(abilityKind, abilityData);
+    abilityCd = abilityMax;
+  }
+  function togglePause(){ if(state===S_PLAY) state=S_PAUSE; else if(state===S_PAUSE) state=S_PLAY; }
+  function openShop(){
+    if(state===S_PLAY) state=S_PAUSE;
+    state=S_SHOP;
+    document.getElementById("shop").classList.add("open");
+    document.getElementById("shopBal").textContent = carrotBank;
+    renderShop();
+  }
+  function closeShop(){
+    document.getElementById("shop").classList.remove("open");
+    document.getElementById("confirm").classList.remove("open");
+    state = S_MENU;
+  }
+  addEventListener("keydown",(e)=>{
+    if(state===S_SHOP){
+      if(e.code==="Escape"){ e.preventDefault(); closeShop(); }
+      return;
+    }
+    if(e.code==="Space"||e.code==="ArrowUp"){ e.preventDefault(); input.hold=true; tryJump(); }
+    else if(e.code==="KeyP"){ togglePause(); }
+    else if(e.code==="KeyR"){ reset(); state=S_PLAY; snd.start(); }
+    else if(e.code==="KeyM"){ muted=!muted; }
+    else if(e.code==="KeyS"){ openShop(); }
+    else if(e.code==="KeyE"||e.code==="ShiftLeft"||e.code==="ShiftRight"){ e.preventDefault(); tryAbility(); }
+  },{passive:false});
+  addEventListener("keyup",(e)=>{ if(e.code==="Space"||e.code==="ArrowUp") input.hold=false; });
+  cvs.addEventListener("pointerdown",(e)=>{
+    e.preventDefault(); input.hold=true;
+    if(state===S_MENU || state===S_OVER){
+      const r = cvs.getBoundingClientRect();
+      const px = (e.clientX - r.left) * (W/r.width);
+      const py = (e.clientY - r.top ) * (H/r.height);
+      if(state===S_MENU && px>=W/2-40 && px<=W/2+40 && py>=190 && py<=204){ openShop(); return; }
+    }
+    tryJump();
+  });
+  cvs.addEventListener("pointerup",()=>{ input.hold=false; });
+  cvs.addEventListener("pointercancel",()=>{ input.hold=false; });
+
+  // ---------- Spawn / particles ----------
+  function spawnFire(){ const h=18; obstacles.push({x:W+8,y:GROUND_Y-h,w:12,h,t:Math.random()*10}); }
+  function spawnCarrot(){ const y = GROUND_Y-24-(Math.random()<0.4?30:0); carrots.push({x:W+8,y,w:10,h:12,t:Math.random()*10,taken:false}); }
+  function burst(x,y,color,n=8){
+    for(let i=0;i<n;i++) particles.push({x,y,vx:(Math.random()-0.5)*90,vy:-Math.random()*80-20,life:.5+Math.random()*.3,c:color,size:2,kind:"burst"});
+  }
+
+  // ---------- Update ----------
+  function update(dt){
+    if(dnTrans<1) dnTrans = Math.min(1, dnTrans + dt/1.5);
+    if(state!==S_PLAY) return;
+    const sk = equippedSkin();
+    const traits = sk.traits||{};
+
+    // Ability cooldown ticks in real time
+    if(abilityCd>0) abilityCd = Math.max(0, abilityCd - dt);
+    // World-time modifier (time warp)
+    if(worldTimeT>0){ worldTimeT -= dt; if(worldTimeT<=0) worldTimeMul=1; }
+    const wdt = dt * worldTimeMul;
+
+    // Invincibility / phoenix fx timers
+    if(invincibleT>0) invincibleT -= dt;
+    if(phoenixFxT>0) phoenixFxT -= dt;
+    if(rainbowT>0) rainbowT -= dt;
+    if(ghostT>0) ghostT -= dt;
+    if(freezeT>0) freezeT -= dt;
+    if(flashT>0) flashT -= dt;
+    if(screenShake>0) screenShake -= dt;
+    if(luckyStartT>0) luckyStartT -= dt;
+
+    speed += 4*dt; distance += speed*dt;
+    const scoreMul = traits.scoreBonus||1;
+    const prevScore = score; score += 3*dt*scoreMul;
+    scoreCarrotAcc += (score-prevScore);
+    const per = traits.fortune||1;
+    while(scoreCarrotAcc>=25){ scoreCarrotAcc-=25; carrotBank += per; }
+
+    // Passive carrot rain
+    if(traits.carrotRain){
+      carrotRainT -= dt;
+      if(carrotRainT<=0){ carrotRainT = traits.carrotRain; carrots.push({x:W+8,y:GROUND_Y-70,w:10,h:12,t:0,taken:false,drop:true}); }
+    }
+    // Passive auto burn
+    if(traits.autoBurn){
+      autoBurnT -= dt;
+      if(autoBurnT<=0 && obstacles.length){
+        autoBurnT = traits.autoBurn;
+        // burn nearest ahead
+        let idx=-1, best=1e9;
+        for(let i=0;i<obstacles.length;i++){ const o=obstacles[i]; if(o.x>bunny.x-10 && o.x<best){ best=o.x; idx=i; } }
+        if(idx>=0){ const o=obstacles[idx]; burst(o.x+o.w/2,o.y+o.h/2,"#ffb84d",22); obstacles.splice(idx,1); snd.shield(); }
+      }
+    }
+
+    const bucket = Math.floor(score/200);
+    if(bucket>lastCycleBucket){ lastCycleBucket=bucket; dnTarget = dnTarget===1?0:1; dnTrans=0; }
+    dayNight += (dnTarget-dayNight) * Math.min(1, dt/0.75);
+
+    const gravMul = traits.lowGrav||1;
+    let gravFactor = gravMul;
+    if(traits.floatFall && bunny.vy>0 && (input.hold)) gravFactor *= traits.floatFall;
+    bunny.vy += 720*dt*gravFactor; bunny.y += bunny.vy*dt;
+    if(bunny.y>=GROUND_Y-bunny.h){
+      if(!bunny.onGround) snd.land();
+      bunny.y = GROUND_Y-bunny.h; bunny.vy=0; bunny.onGround=true; jumpsUsed=0;
+      coyoteT = traits.coyoteMs||0;
+    } else if(bunny.onGround){
+      bunny.onGround=false;
+    } else if(coyoteT>0){ coyoteT -= dt; }
+    bunny.animT += dt;
+
+    // Trail
+    trailEmit(sk, particles, bunny.x+2, bunny.y+bunny.h-2, true);
+    if(rainbowT>0) trailEmit({trail:"rainbow"}, particles, bunny.x+2, bunny.y+bunny.h-2, true);
+    if(ghostT>0){
+      particles.push({x:bunny.x+6,y:bunny.y+8,vx:0,vy:0,life:0.35,c:"rgba(196,112,255,0.6)",size:10,kind:"ghost"});
+    }
+
+    scrollFar = (scrollFar+speed*0.15*wdt)%W;
+    scrollNear = (scrollNear+speed*0.35*wdt)%W;
+    scrollGround = (scrollGround+speed*wdt)%W;
+
+    if(luckyStartT<=0){
+      spawnT -= dt;
+      if(spawnT<=0){ spawnFire(); spawnT = Math.max(0.75, 1.7-speed*0.004) + Math.random()*0.8; }
+    }
+    carrotT -= dt;
+    if(carrotT<=0){ spawnCarrot(); carrotT = 1.4+Math.random()*1.6; }
+
+    const magnetR = (abilityKind==="magnetPulse" && abilityCd>abilityMax-1.5)?250:(traits.magnet||0);
+    const obsMove = (freezeT>0)?0:speed*wdt;
+    for(const o of obstacles){ o.x -= obsMove; o.t += wdt*10; }
+    for(const c of carrots){
+      c.x -= speed*wdt; c.t += wdt*4;
+      if(c.drop) c.y += 30*dt;
+      if(magnetR){
+        const bcx=bunny.x+6, bcy=bunny.y+8;
+        const dx=bcx-(c.x+5), dy=bcy-(c.y+6);
+        const d2=dx*dx+dy*dy, R=magnetR;
+        if(d2<R*R){ const d=Math.sqrt(d2)||1, pull=(magnetR>150?520:140)*dt; c.x+=dx/d*pull; c.y+=dy/d*pull; }
+      }
+    }
+    obstacles = obstacles.filter(o=>o.x+o.w>-4);
+    carrots = carrots.filter(c=>c.x+c.w>-4 && !c.taken);
+
+    for(const p of particles){ p.vy += (p.kind==="bubble"?-40:(p.kind==="ghost"?0:300))*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt; }
+    particles = particles.filter(p=>p.life>0);
+    for(const p of fxParticles){ p.vx*=0.98; p.vy+=(p.g||60)*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt; }
+    fxParticles = fxParticles.filter(p=>p.life>0);
+
+    // Collision
+    const hbMul = traits.smallHitbox||1;
+    const inset = (1-hbMul)*6;
+    const bx=bunny.x+2+inset, by=bunny.y+2+inset, bw=(bunny.w-4)*hbMul, bh=(bunny.h-4)*hbMul;
+    const fireMul = traits.fireShrink||1;
+    if(invincibleT<=0 && rainbowT<=0 && ghostT<=0){
+      for(let i=0;i<obstacles.length;i++){
+        const o=obstacles[i];
+        const oInset=(1-fireMul)*3;
+        const ox=o.x+2+oInset, oy=o.y+3+oInset, ow=(o.w-4)*fireMul, oh=(o.h-4)*fireMul;
+        if(bx<ox+ow && bx+bw>ox && by<oy+oh && by+bh>oy){
+          if(shieldCount>0){
+            shieldCount--; snd.shield(); burst(bunny.x+6,bunny.y+8,"#8ad8ff",14);
+            obstacles.splice(i,1); break;
+          }
+          if(phoenixCharge){
+            phoenixCharge=false; invincibleT=2; phoenixFxT=2; flashT=0.4; flashCol=[255,180,60]; screenShake=0.4;
+            for(let k=0;k<40;k++) fxParticles.push({x:bunny.x+6,y:bunny.y+8,vx:(Math.random()-0.5)*260,vy:-Math.random()*200-40,life:0.9+Math.random()*0.4,c:"#ff8b28",size:3,g:200});
+            snd.shield(); obstacles.splice(i,1); break;
+          }
+          snd.hit(); burst(bunny.x+6,bunny.y+8,"#ff5c8a",16);
+          state=S_OVER; if(score>best) best=Math.floor(score); saveAll(); break;
+        }
+      }
+    }
+    for(const c of carrots){
+      if(c.taken) continue;
+      if(bx<c.x+c.w && bx+bw>c.x && by<c.y+c.h && by+bh>c.y){
+        c.taken=true; carrotCount++; carrotBank++; score+=25; snd.carrot();
+        burst(c.x+5,c.y+6,"#ff8b28",10);
+        if(traits.carrotHeal){
+          carrotHealAcc++;
+          if(carrotHealAcc>=traits.carrotHeal){ carrotHealAcc=0; if(shieldCount<1){ shieldCount=1; snd.shield(); } }
+        }
+      }
+    }
+    sEl.textContent = Math.floor(score);
+    bEl.textContent = Math.max(best, Math.floor(score));
+    cEl.textContent = carrotBank;
+  }
+
+  // ---------- Active abilities ----------
+  const input = { hold:false };
+  function triggerAbility(kind, data){
+    const b = bunny;
+    if(kind==="timeWarp"){
+      worldTimeMul = 0.25; worldTimeT = data.dur; flashT=0.25; flashCol=[196,112,255];
+      for(let k=0;k<24;k++) fxParticles.push({x:b.x+6,y:b.y+8,vx:(Math.random()-0.5)*180,vy:(Math.random()-0.5)*180,life:0.8,c:"#c470ff",size:2,g:0});
+    } else if(kind==="thunder"){
+      const count = data.count||3;
+      const list = obstacles.slice().sort((a,b2)=>a.x-b2.x).slice(0,count);
+      for(const o of list){
+        const idx=obstacles.indexOf(o); if(idx>=0) obstacles.splice(idx,1);
+        for(let k=0;k<14;k++) fxParticles.push({x:o.x+o.w/2,y:o.y+o.h/2,vx:(Math.random()-0.5)*180,vy:-Math.random()*160,life:0.7,c:data.fx==="fire"?"#ff8b28":"#ffe27a",size:3,g:120});
+      }
+      flashT=0.3; flashCol=data.fx==="fire"?[255,140,60]:[255,240,140]; screenShake=0.3; snd.hit();
+    } else if(kind==="void"){
+      invincibleT = data.dur; ghostT = data.dur; flashT=0.2; flashCol=[196,112,255];
+    } else if(kind==="dashStrike"){
+      const dist = data.dist||70;
+      // destroy fires in path
+      for(let i=obstacles.length-1;i>=0;i--){
+        const o=obstacles[i];
+        if(o.x>b.x-4 && o.x<b.x+dist+16){
+          for(let k=0;k<10;k++) fxParticles.push({x:o.x+o.w/2,y:o.y+o.h/2,vx:(Math.random()-0.5)*220,vy:-Math.random()*180,life:0.6,c:"#ff8b28",size:3,g:150});
+          obstacles.splice(i,1);
+        }
+      }
+      // trail line
+      for(let k=0;k<24;k++) fxParticles.push({x:b.x+6+Math.random()*dist,y:b.y+6+Math.random()*8,vx:0,vy:0,life:0.4,c:"#ffe27a",size:2,g:0});
+      b.x = Math.min(b.x+dist, W-40); invincibleT=Math.max(invincibleT,0.4);
+    } else if(kind==="nature"){
+      for(const c of carrots){ c.taken=true; carrotCount++; carrotBank++; score+=25; burst(c.x+5,c.y+6,"#7bff9a",8); }
+      carrots.length=0; flashT=0.25; flashCol=[123,255,154]; snd.carrot();
+    } else if(kind==="freeze"){
+      freezeT = data.dur; flashT=0.25; flashCol=[170,220,255];
+      for(let k=0;k<30;k++) fxParticles.push({x:Math.random()*W,y:Math.random()*H*0.6,vx:0,vy:20+Math.random()*40,life:1,c:"#cfeaff",size:2,g:0});
+    } else if(kind==="solarBurst"){
+      for(const o of obstacles) for(let k=0;k<8;k++) fxParticles.push({x:o.x+o.w/2,y:o.y+o.h/2,vx:(Math.random()-0.5)*240,vy:-Math.random()*220,life:0.9,c:"#ffe27a",size:3,g:120});
+      obstacles.length=0; flashT=0.5; flashCol=[255,240,180]; screenShake=0.5; invincibleT=Math.max(invincibleT,0.6); snd.hit();
+    } else if(kind==="magnetPulse"){
+      // handled in update via cooldown window
+      flashT=0.2; flashCol=[0,240,255];
+    } else if(kind==="blink"){
+      b.x = Math.min(b.x + (data.dist||90), W-40); invincibleT = Math.max(invincibleT, 0.3);
+      for(let k=0;k<18;k++) fxParticles.push({x:b.x-Math.random()*(data.dist||90),y:b.y+Math.random()*b.h,vx:0,vy:0,life:0.35,c:"#c470ff",size:2,g:0});
+      flashT=0.2; flashCol=[196,112,255];
+    } else if(kind==="shieldRegen"){
+      if(shieldCount<3){ shieldCount++; snd.shield(); }
+      for(let k=0;k<16;k++) fxParticles.push({x:b.x+6,y:b.y+8,vx:(Math.random()-0.5)*140,vy:-Math.random()*140,life:0.6,c:"#8ad8ff",size:2,g:80});
+    } else if(kind==="rainbow"){
+      rainbowT = data.dur; invincibleT = Math.max(invincibleT, data.dur); flashT=0.3; flashCol=[255,120,180];
+    }
+  }
+
+  // ---------- Draw ----------
+  function lerpColor(a,b,t){ return [(a[0]+(b[0]-a[0])*t)|0,(a[1]+(b[1]-a[1])*t)|0,(a[2]+(b[2]-a[2])*t)|0]; }
+  const NIGHT_TOP=[59,31,92],NIGHT_MID=[27,16,48],NIGHT_BOT=[74,42,61];
+  const DAY_TOP=[135,200,235],DAY_MID=[200,225,240],DAY_BOT=[240,220,180];
+
+  function drawBackground(dt){
+    const d = dayNight;
+    const top = lerpColor(NIGHT_TOP, DAY_TOP, d);
+    const mid = lerpColor(NIGHT_MID, DAY_MID, d);
+    const bot = lerpColor(NIGHT_BOT, DAY_BOT, d);
+    const grd = ctx.createLinearGradient(0,0,0,H);
+    grd.addColorStop(0,`rgb(${top[0]},${top[1]},${top[2]})`);
+    grd.addColorStop(0.55,`rgb(${mid[0]},${mid[1]},${mid[2]})`);
+    grd.addColorStop(1,`rgb(${bot[0]},${bot[1]},${bot[2]})`);
+    ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+    const nightAmt = 1-d;
+    if(nightAmt>0.02){
+      for(const s of stars){
+        s.t += dt*2;
+        const a = (0.4 + Math.sin(s.t+s.x)*0.4)*nightAmt;
+        ctx.fillStyle=`rgba(255,240,200,${a.toFixed(3)})`;
+        ctx.fillRect(s.x|0,s.y|0,1,1);
+      }
+      ctx.globalAlpha=nightAmt;
+      ctx.fillStyle="#ffe9a8"; ctx.beginPath(); ctx.arc(W-60,46,14,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle=`rgba(${mid[0]},${mid[1]},${mid[2]},0.35)`;
+      ctx.beginPath(); ctx.arc(W-56,42,12,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+    if(d>0.02){
+      ctx.globalAlpha=d;
+      ctx.fillStyle="#ffe27a"; ctx.beginPath(); ctx.arc(W-60,50,16,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#fff6c8"; ctx.beginPath(); ctx.arc(W-60,50,10,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle="rgba(255,220,120,0.7)"; ctx.lineWidth=1;
+      for(let i=0;i<8;i++){
+        const a=i*Math.PI/4+(performance.now()/2000);
+        ctx.beginPath(); ctx.moveTo(W-60+Math.cos(a)*20,50+Math.sin(a)*20);
+        ctx.lineTo(W-60+Math.cos(a)*26,50+Math.sin(a)*26); ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+    }
+    ctx.globalAlpha=1-d; ctx.drawImage(mtnFarNight,-scrollFar,0); ctx.drawImage(mtnFarNight,W-scrollFar,0);
+    ctx.globalAlpha=d;   ctx.drawImage(mtnFarDay,-scrollFar,0);   ctx.drawImage(mtnFarDay,W-scrollFar,0);
+    ctx.globalAlpha=1-d; ctx.drawImage(mtnNearNight,-scrollNear,8); ctx.drawImage(mtnNearNight,W-scrollNear,8);
+    ctx.globalAlpha=d;   ctx.drawImage(mtnNearDay,-scrollNear,8);   ctx.drawImage(mtnNearDay,W-scrollNear,8);
+    ctx.globalAlpha=1;
+    ctx.globalAlpha=1-d; ctx.drawImage(groundNight,-scrollGround,GROUND_Y); ctx.drawImage(groundNight,W-scrollGround,GROUND_Y);
+    ctx.globalAlpha=d;   ctx.drawImage(groundDay,-scrollGround,GROUND_Y);   ctx.drawImage(groundDay,W-scrollGround,GROUND_Y);
+    ctx.globalAlpha=1;
+  }
+
+  function drawBunnyAt(g, skin, x, y, animT, mode){
+    // mode: "run","idle","jump"
+    let art;
+    if(mode==="jump") art=BUNNY_JUMP;
+    else if(mode==="idle") art = (Math.floor(animT*2)%2===0)?BUNNY_IDLE:BUNNY_A;
+    else art = (Math.floor(animT*12)%2===0)?BUNNY_A:BUNNY_B;
+    drawArt(g, art, skin.pal, x, y, 1);
+    drawAcc(g, skin, x, y);
+  }
+  function drawBunny(){
+    const sk = equippedSkin();
+    const alpha = ghostT>0 ? 0.45 : 1;
+    ctx.globalAlpha = alpha;
+    if(rainbowT>0){
+      const hue = (performance.now()/6)%360;
+      ctx.filter = `hue-rotate(${hue}deg) saturate(1.6)`;
+    }
+    drawBunnyAt(ctx, sk, bunny.x, bunny.y, bunny.animT, bunny.onGround?"run":"jump");
+    ctx.filter="none"; ctx.globalAlpha=1;
+    // Shields (stacked rings)
+    for(let s=0;s<shieldCount;s++){
+      const t=performance.now()/300 + s*0.7;
+      ctx.strokeStyle=`rgba(140,200,255,${0.6+Math.sin(t)*0.2})`; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(bunny.x+6,bunny.y+8,12+s*2,0,Math.PI*2); ctx.stroke();
+    }
+    if(phoenixFxT>0){
+      ctx.strokeStyle=`rgba(255,140,60,${0.5+Math.sin(performance.now()/80)*0.3})`;
+      ctx.beginPath(); ctx.arc(bunny.x+6,bunny.y+8,14,0,Math.PI*2); ctx.stroke();
+    }
+    if(bunny.onGround){
+      ctx.fillStyle="rgba(0,0,0,0.35)"; ctx.fillRect(bunny.x+1,GROUND_Y-1,bunny.w-2,1);
+    } else {
+      const d=(GROUND_Y-(bunny.y+bunny.h)); const w=Math.max(4,bunny.w-Math.floor(d/4));
+      ctx.fillStyle=`rgba(0,0,0,${Math.max(0.1,0.35-d/200)})`;
+      ctx.fillRect(bunny.x+(bunny.w-w)/2|0,GROUND_Y-1,w,1);
+    }
+  }
+  function drawFxParticles(){
+    for(const p of fxParticles){
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+      ctx.fillStyle = p.c;
+      ctx.fillRect(p.x|0, p.y|0, p.size||2, p.size||2);
+    }
+    ctx.globalAlpha = 1;
+  }
+  function drawAbilityHUD(){
+    if(!abilityKind) return;
+    const x=6, y=26, w=44, h=6;
+    ctx.fillStyle="rgba(0,0,0,0.55)"; ctx.fillRect(x-1,y-1,w+2,h+2);
+    const ratio = abilityMax>0 ? 1-(abilityCd/abilityMax) : 1;
+    ctx.fillStyle = ratio>=1 ? "#7bff9a" : "#c470ff";
+    ctx.fillRect(x,y,Math.floor(w*ratio),h);
+    ctx.fillStyle="#fff5d6";
+    ctx.font="6px ui-monospace, monospace"; ctx.textBaseline="top"; ctx.textAlign="left";
+    ctx.fillText(ratio>=1?"[E] READY":"[E] "+abilityCd.toFixed(1)+"s", x, y+h+1);
+  }
+  function drawScreenFx(){
+    if(flashT>0){
+      const a = Math.min(0.5, flashT);
+      ctx.fillStyle = `rgba(${flashCol[0]},${flashCol[1]},${flashCol[2]},${a})`;
+      ctx.fillRect(0,0,W,H);
+    }
+    if(worldTimeMul<1){
+      ctx.fillStyle="rgba(120,60,180,0.14)"; ctx.fillRect(0,0,W,H);
+    }
+    if(freezeT>0){
+      ctx.fillStyle="rgba(160,220,255,0.12)"; ctx.fillRect(0,0,W,H);
+    }
+  }
+  function drawObstacles(){
+    for(const o of obstacles){
+      const art=(Math.floor(o.t)%2===0)?FIRE_A:FIRE_B;
+      const sway=Math.sin(o.t*0.6)*1|0;
+      drawArt(ctx, art, FIRE_PAL, o.x-1+sway, GROUND_Y-18, 1);
+      ctx.fillStyle="rgba(255,120,40,0.15)"; ctx.fillRect(o.x-3,GROUND_Y-16,o.w+6,14);
+    }
+  }
+  function drawCarrots(){
+    for(const c of carrots){ const bob=Math.sin(c.t*1.5)*1|0; drawArt(ctx, CARROT, CARROT_PAL, c.x, c.y+bob, 1); }
+  }
+  function drawParticles(){
+    for(const p of particles){
+      if(p.kind==="burst"){
+        ctx.fillStyle=p.c; ctx.globalAlpha=Math.max(0,p.life);
+        ctx.fillRect(p.x|0,p.y|0,2,2); ctx.globalAlpha=1;
+      } else { drawTrailParticle(ctx, p); }
+    }
+  }
+  function text(str,x,y,size=8,color="#fff5d6",align="center"){
+    ctx.textAlign=align; ctx.textBaseline="top";
+    ctx.font=`${size}px ui-monospace, monospace`;
+    ctx.fillStyle="#0008"; ctx.fillText(str,x+1,y+1);
+    ctx.fillStyle=color; ctx.fillText(str,x,y);
+  }
+  function drawPanel(x,y,w,h){
+    ctx.fillStyle="rgba(10,6,20,0.82)"; ctx.fillRect(x,y,w,h);
+    ctx.fillStyle="#ffb84d";
+    ctx.fillRect(x,y,w,1); ctx.fillRect(x,y+h-1,w,1); ctx.fillRect(x,y,1,h); ctx.fillRect(x+w-1,y,1,h);
+    ctx.fillStyle="#ff5c8a";
+    ctx.fillRect(x+2,y+2,2,2); ctx.fillRect(x+w-4,y+2,2,2);
+    ctx.fillRect(x+2,y+h-4,2,2); ctx.fillRect(x+w-4,y+h-4,2,2);
+  }
+  function drawButton(x,y,w,h,label,color="#ffb84d"){
+    ctx.fillStyle="#1a0f2a"; ctx.fillRect(x,y,w,h);
+    ctx.fillStyle=color;
+    ctx.fillRect(x,y,w,1); ctx.fillRect(x,y+h-1,w,1); ctx.fillRect(x,y,1,h); ctx.fillRect(x+w-1,y,1,h);
+    text(label, x+w/2, y+(h-8)/2+1, 8, color, "center");
+  }
+  function drawMenu(){
+    drawPanel(60, 40, W-120, H-90);
+    text("BUNNY RUNNER", W/2, 54, 16, "#ffb84d");
+    text("A PIXEL DASH THROUGH FIRE", W/2, 76, 8, "#fff5d6");
+    const sk = equippedSkin();
+    drawBunnyAt(ctx, sk, W/2-8, 96, performance.now()/1000, "idle");
+    drawArt(ctx, CARROT, CARROT_PAL, W/2-30, 100, 1);
+    drawArt(ctx, FIRE_A, FIRE_PAL, W/2+18, 94, 1);
+    text("EQUIPPED: "+sk.name.toUpperCase(), W/2, 130, 8, "#fff5d6");
+    text("🥕 "+carrotBank+"   BEST "+best, W/2, 146, 8, "#ffb066");
+    if(blink<0.6) text("PRESS SPACE / TAP TO START", W/2, 168, 8, "#ffb84d");
+    drawButton(W/2-40, 190, 80, 14, "SHOP  [S]", "#ff5c8a");
+    text("KEYS: SPACE JUMP · P PAUSE · M MUTE", W/2, 214, 7, "#fff5d688");
+  }
+  function drawOver(){
+    drawPanel(60, 40, W-120, H-90);
+    text("GAME OVER", W/2, 56, 16, "#ff5c8a");
+    text("SCORE  "+Math.floor(score), W/2, 88, 10, "#fff5d6");
+    text("BEST   "+best, W/2, 106, 10, "#ffb84d");
+    text("🥕 THIS RUN  "+carrotCount+"   BANK "+carrotBank, W/2, 124, 8, "#ffb066");
+    if(blink<0.6) text("PRESS SPACE / TAP TO RETRY", W/2, 156, 8, "#ffb84d");
+    text("S — SHOP", W/2, 176, 8, "#ff5c8a");
+  }
+  function drawPauseOverlay(){
+    ctx.fillStyle="rgba(0,0,0,0.45)"; ctx.fillRect(0,0,W,H);
+    text("PAUSED", W/2, H/2-10, 16, "#ffb84d");
+    text("PRESS P TO RESUME", W/2, H/2+10, 8, "#fff5d6");
+  }
+
+  // ---------- Loop ----------
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(0.05, (now-last)/1000); last = now;
+    blink = (blink+dt)%1.2;
+    update(dt);
+    ctx.clearRect(0,0,W,H);
+    ctx.save();
+    if(screenShake>0){
+      const s = Math.min(4, screenShake*10);
+      ctx.translate((Math.random()-0.5)*s, (Math.random()-0.5)*s);
+    }
+    drawBackground(dt);
+    drawCarrots(); drawObstacles(); drawBunny(); drawParticles(); drawFxParticles();
+    ctx.restore();
+    drawScreenFx();
+    if(state===S_PLAY) drawAbilityHUD();
+    if(state===S_MENU) drawMenu();
+    else if(state===S_OVER) drawOver();
+    else if(state===S_PAUSE) drawPauseOverlay();
+    if(muted) text("MUTED", W-4, 4, 7, "#ff5c8a", "right");
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // ==================================================================
+  // ---------- Shop UI (HTML overlay) ----------
+  // ==================================================================
+  const shopEl = document.getElementById("shop");
+  const gridEl = document.getElementById("shopGrid");
+  const searchEl = document.getElementById("shopSearch");
+  const sortEl = document.getElementById("shopSort");
+  const chipsEl = document.getElementById("filterChips");
+  const pvName=document.getElementById("pvName"), pvRare=document.getElementById("pvRare"),
+        pvDesc=document.getElementById("pvDesc"), pvAcc=document.getElementById("pvAcc"),
+        pvTrail=document.getElementById("pvTrail"), pvTrait=document.getElementById("pvTrait"),
+        pvBtn=document.getElementById("pvBtn"), pvCanvas=document.getElementById("pvCanvas"),
+        pvIdle=document.getElementById("pvIdle"), pvRun=document.getElementById("pvRun"),
+        pvJump=document.getElementById("pvJump");
+  const pvCtx = pvCanvas.getContext("2d"); pvCtx.imageSmoothingEnabled=false;
+  const pvIdleCtx = pvIdle.getContext("2d"); pvIdleCtx.imageSmoothingEnabled=false;
+  const pvRunCtx = pvRun.getContext("2d"); pvRunCtx.imageSmoothingEnabled=false;
+  const pvJumpCtx = pvJump.getContext("2d"); pvJumpCtx.imageSmoothingEnabled=false;
+
+  let filter = "all", sortMode="rarity", query="", selectedId = equippedId;
+
+  document.getElementById("closeShop").addEventListener("click", closeShop);
+  searchEl.addEventListener("input", ()=>{ query = searchEl.value.trim().toLowerCase(); renderShop(); });
+  sortEl.addEventListener("change", ()=>{ sortMode = sortEl.value; renderShop(); });
+  chipsEl.addEventListener("click",(e)=>{
+    const b = e.target.closest(".chip"); if(!b) return;
+    filter = b.dataset.r;
+    for(const c of chipsEl.querySelectorAll(".chip")) c.classList.toggle("on", c===b);
+    renderShop();
+  });
+
+  function skinPrice(sk){ return sk.price!=null ? sk.price : (sk.id==="classic"?0:0); }
+  function skinTraitLabel(sk){
+    const t=sk.traits||{};
+    if(t.phoenix) return "PHOENIX REVIVE";
+    if(t.active){
+      const K = t.active.kind, dur=t.active.dur, cd=t.active.cd;
+      const map = {
+        timeWarp:"TIME WARP", thunder:"LIGHTNING STRIKE", void:"VOID WALK",
+        dashStrike:"DASH STRIKE", nature:"CALL OF THE WILD", freeze:"FREEZE",
+        solarBurst:"SOLAR BURST", magnetPulse:"MAGNET PULSE", blink:"BLINK",
+        shieldRegen:"SHIELD REGEN", rainbow:"RAINBOW FRENZY"
+      };
+      return `[E] ${map[K]||K.toUpperCase()} · ${dur}s / ${cd}s CD`;
+    }
+    if(t.tripleJump) return "TRIPLE JUMP";
+    if(t.doubleJump && t.highJump) return "DOUBLE JUMP + HIGH JUMP";
+    if(t.doubleJump) return "DOUBLE JUMP";
+    if(t.magnet) return "CARROT MAGNET " + t.magnet + "px";
+    if(t.shieldStart) return t.shieldStart + "-HIT SHIELD";
+    if(t.autoBurn) return "AUTO-BURN " + t.autoBurn + "s";
+    if(t.carrotHeal) return "CARROT HEAL /" + t.carrotHeal;
+    if(t.fortune && t.fortune>=1.5) return "MEGA FORTUNE ×" + t.fortune;
+    if(t.fortune) return "FORTUNE ×" + t.fortune;
+    if(t.floatFall) return "FLOAT FALL";
+    if(t.lowGrav) return "LOW GRAVITY";
+    if(t.highJump) return "HIGH JUMP";
+    if(t.scoreBonus) return "SCORE ×" + t.scoreBonus;
+    if(t.carrotRain) return "CARROT RAIN " + t.carrotRain + "s";
+    if(t.startCarrots) return "+" + t.startCarrots + " STARTING";
+    if(t.luckyStart) return t.luckyStart + "s LUCKY START";
+    if(t.smallHitbox) return "SLIM HITBOX";
+    if(t.fireShrink) return "FIRE FADE";
+    if(t.coyoteMs) return "COYOTE GRACE";
+    return "COSMETIC";
+  }
+  function accLabel(a){ return (a==="none"?"NONE":a.toUpperCase()); }
+
+  function drawSkinToCanvas(canvas, sk, mode, t){
+    const g = canvas.getContext("2d");
+    g.imageSmoothingEnabled=false;
+    g.clearRect(0,0,canvas.width,canvas.height);
+    // Center a 16x16 sprite
+    const dx = (canvas.width-16)>>1, dy = (canvas.height-16)>>1;
+    // shadow
+    g.fillStyle="rgba(0,0,0,0.35)"; g.fillRect(dx+1, dy+16, 14, 1);
+    let art;
+    if(mode==="jump") art=BUNNY_JUMP;
+    else if(mode==="idle") art = (Math.floor(t*2)%2===0)?BUNNY_IDLE:BUNNY_A;
+    else art = (Math.floor(t*8)%2===0)?BUNNY_A:BUNNY_B;
+    drawArt(g, art, sk.pal, dx, dy, 1);
+    drawAcc(g, sk, dx, dy);
+  }
+
+  // Card canvas cache
+  const cardData = new WeakMap();
+
+  function buildCard(sk){
+    const isOwned = owned.includes(sk.id);
+    const isEq = equippedId===sk.id;
+    const card = document.createElement("div");
+    card.className = "card"+(isOwned?"":" locked")+(isEq?" equipped":"")+(selectedId===sk.id?" sel":"");
+    card.dataset.r = sk.r; card.dataset.id = sk.id;
+    const c = document.createElement("canvas"); c.width=32; c.height=32;
+    card.appendChild(c);
+    const rr = document.createElement("div"); rr.className="rr"; rr.textContent = RARITY[sk.r].name;
+    card.appendChild(rr);
+    const nm = document.createElement("div"); nm.className="nm"; nm.textContent = sk.name;
+    card.appendChild(nm);
+    const pr = document.createElement("div"); pr.className="pr";
+    if(isEq){ pr.textContent="EQUIPPED"; pr.classList.add("equip"); }
+    else if(isOwned){ pr.textContent="OWNED"; pr.classList.add("owned"); }
+    else { pr.textContent = skinPrice(sk)+" 🥕"; }
+    card.appendChild(pr);
+    if(isEq){ const b=document.createElement("div"); b.className="eqBadge"; b.textContent="★"; card.appendChild(b); }
+    if(!isOwned){ const l=document.createElement("div"); l.className="lock"; l.textContent="🔒"; card.appendChild(l); }
+    cardData.set(card, {sk, canvas:c, hover:false, t:Math.random()*3});
+    card.addEventListener("mouseenter", ()=>{ cardData.get(card).hover=true; });
+    card.addEventListener("mouseleave", ()=>{ cardData.get(card).hover=false; });
+    card.addEventListener("click", ()=>{
+      selectedId = sk.id;
+      for(const el of gridEl.querySelectorAll(".card.sel")) el.classList.remove("sel");
+      card.classList.add("sel");
+      updatePreview();
+      snd.tick();
+    });
+    card.addEventListener("dblclick", ()=>{
+      if(owned.includes(sk.id) && equippedId!==sk.id) equipSkin(sk);
+      else if(!owned.includes(sk.id)) openConfirm(sk);
+    });
+    return card;
+  }
+
+  function renderShop(){
+    let list = SKINS.slice();
+    if(filter!=="all") list = list.filter(s=>s.r===filter);
+    if(query) list = list.filter(s=>s.name.toLowerCase().includes(query)||s.desc.toLowerCase().includes(query)||s.r.includes(query));
+    const rrank = r=>RARITY[r].rank;
+    if(sortMode==="rarity") list.sort((a,b)=>rrank(a.r)-rrank(b.r)||skinPrice(a)-skinPrice(b));
+    else if(sortMode==="priceAsc") list.sort((a,b)=>skinPrice(a)-skinPrice(b));
+    else if(sortMode==="priceDesc") list.sort((a,b)=>skinPrice(b)-skinPrice(a));
+    else if(sortMode==="name") list.sort((a,b)=>a.name.localeCompare(b.name));
+    else if(sortMode==="owned") list.sort((a,b)=>(owned.includes(b.id)?1:0)-(owned.includes(a.id)?1:0)||rrank(a.r)-rrank(b.r));
+
+    gridEl.innerHTML="";
+    for(const sk of list) gridEl.appendChild(buildCard(sk));
+    if(!SKIN_BY_ID[selectedId]) selectedId = equippedId;
+    updatePreview();
+  }
+
+  function updatePreview(){
+    const sk = SKIN_BY_ID[selectedId] || equippedSkin();
+    pvName.textContent = sk.name;
+    pvRare.textContent = RARITY[sk.r].name;
+    pvRare.style.color = RARITY[sk.r].color;
+    pvDesc.textContent = sk.desc;
+    pvAcc.textContent = accLabel(sk.acc);
+    pvTrail.textContent = sk.trail.toUpperCase();
+    pvTrait.textContent = skinTraitLabel(sk);
+    const isOwned = owned.includes(sk.id);
+    const isEq = equippedId===sk.id;
+    pvBtn.className = "pvBtn";
+    if(isEq){ pvBtn.classList.add("equipped"); pvBtn.textContent="✓ EQUIPPED"; pvBtn.disabled=true; }
+    else if(isOwned){ pvBtn.classList.add("equip"); pvBtn.textContent="EQUIP"; pvBtn.disabled=false; }
+    else {
+      pvBtn.classList.add("buy");
+      const cost = skinPrice(sk);
+      if(carrotBank>=cost) pvBtn.textContent = "UNLOCK — "+cost+" 🥕";
+      else { pvBtn.classList.add("no"); pvBtn.textContent = "NEED "+(cost-carrotBank)+" MORE 🥕"; }
+    }
+  }
+  pvBtn.addEventListener("click", ()=>{
+    const sk = SKIN_BY_ID[selectedId]; if(!sk) return;
+    if(owned.includes(sk.id)){
+      if(equippedId!==sk.id) equipSkin(sk);
+    } else openConfirm(sk);
+  });
+
+  function equipSkin(sk){
+    equippedId = sk.id; saveAll(); snd.equip();
+    toast("EQUIPPED "+sk.name.toUpperCase());
+    renderShop();
+  }
+
+  // ---- Confirm modal ----
+  const cf = document.getElementById("confirm");
+  document.getElementById("cfNo").addEventListener("click",()=>cf.classList.remove("open"));
+  document.getElementById("cfOk").addEventListener("click",()=>{
+    const sk = SKIN_BY_ID[pendingBuyId]; if(!sk) return cf.classList.remove("open");
+    const cost = skinPrice(sk);
+    if(carrotBank<cost){ snd.deny(); toast("NOT ENOUGH CARROTS"); cf.classList.remove("open"); return; }
+    carrotBank -= cost;
+    owned.push(sk.id);
+    equippedId = sk.id;
+    saveAll();
+    cEl.textContent = carrotBank;
+    snd.buy();
+    cf.classList.remove("open");
+    // Unlock animation on card
+    const card = gridEl.querySelector('.card[data-id="'+sk.id+'"]');
+    if(card){
+      const ring = document.createElement("div"); ring.className="unlockRing";
+      ring.style.borderColor = RARITY[sk.r].color;
+      card.appendChild(ring); setTimeout(()=>ring.remove(),800);
+    }
+    toast("UNLOCKED "+sk.name.toUpperCase()+" ✦");
+    renderShop();
+  });
+  let pendingBuyId = null;
+  function openConfirm(sk){
+    const cost = skinPrice(sk);
+    if(carrotBank<cost){ snd.deny(); toast("NEED "+(cost-carrotBank)+" MORE 🥕"); return; }
+    pendingBuyId = sk.id;
+    document.getElementById("cfName").textContent = sk.name+"  ("+RARITY[sk.r].name+")";
+    document.getElementById("cfCost").textContent = cost;
+    document.getElementById("cfAfter").textContent = carrotBank-cost;
+    cf.classList.add("open");
+  }
+
+  // ---- Toast ----
+  const toastEl = document.getElementById("toastEl");
+  let toastT = 0;
+  function toast(msg){ toastEl.textContent = msg; toastEl.classList.add("show"); toastT = performance.now()+1800; }
+  setInterval(()=>{ if(toastT && performance.now()>toastT){ toastEl.classList.remove("show"); toastT=0; } }, 200);
+
+  // ---- Shop animation loop ----
+  function shopTick(){
+    if(shopEl.classList.contains("open")){
+      const t = performance.now()/1000;
+      // Cards: idle animation, running on hover
+      for(const card of gridEl.children){
+        const d = cardData.get(card); if(!d) continue;
+        d.t += 1/60;
+        drawSkinToCanvas(d.canvas, d.sk, d.hover?"run":"idle", d.t);
+      }
+      // Preview panel
+      const sk = SKIN_BY_ID[selectedId];
+      if(sk){
+        // Big preview: cycles idle → run → jump
+        const cyc = (t*0.6)%3;
+        const mode = cyc<1?"idle":(cyc<2?"run":"jump");
+        pvCtx.clearRect(0,0,pvCanvas.width,pvCanvas.height);
+        // ground line
+        pvCtx.fillStyle="rgba(255,255,255,0.08)"; pvCtx.fillRect(0, 40, pvCanvas.width, 1);
+        const bx = (pvCanvas.width-16)>>1;
+        const by = 24 + (mode==="jump"?-6:0) + Math.sin(t*3)*(mode==="idle"?1:0);
+        drawSkinToCanvas(pvCanvas, sk, mode, t);
+        // faux trail
+        for(let i=0;i<2;i++){
+          const p = {x: bx-2-i*4 + Math.random()*3, y: by+14+Math.random()*2, life:.5+Math.random()*.5, size:2, c:"#fff", kind:"trail"};
+          trailEmit(sk, [], 0,0,false); // ensure defined
+          // just draw a static wisp based on trail color
+          switch(sk.trail){
+            case "fire": p.c=Math.random()<.5?"#ff8b28":"#ffe27a"; break;
+            case "sparkle": p.c="#fff2b0"; break;
+            case "hearts": p.c="#ff5c8a"; p.kind="heart"; break;
+            case "snow": p.c="#e0eeff"; break;
+            case "leaves": p.c="#5abf90"; break;
+            case "bubbles": p.c="#a8f0e0"; p.kind="bubble"; break;
+            case "stars": p.c="#c470ff"; break;
+            case "lightning": p.c="#00f0ff"; break;
+            case "smoke": p.c="#8b8fa0"; break;
+            case "rainbow": p.c=["#ff3b7a","#ffb84d","#ffe27a","#5fd47a","#4aa8ff","#c470ff"][(i*2+((t*4)|0))%6]; break;
+            case "pixels": p.c=sk.pal.T; break;
+            case "petals": p.c="#ffb0c4"; break;
+            default: p.c=null;
+          }
+          if(p.c) drawTrailParticle(pvCtx, p);
+        }
+        // Mini animation strip
+        drawSkinToCanvas(pvIdle, sk, "idle", t);
+        drawSkinToCanvas(pvRun, sk, "run", t);
+        drawSkinToCanvas(pvJump, sk, "jump", t);
+      }
+    }
+    requestAnimationFrame(shopTick);
+  }
+  requestAnimationFrame(shopTick);
+
+  // ==================================================================
+  // EXPANSION PACK: RPG progression, 15 power-ups, 15 obstacle types,
+  // 6 collectible variants, combos, chests, bonus rounds, profile UI.
+  // Everything below is additive — original systems are wrapped, not rewritten.
+  // ==================================================================
+
+  // ---------- Persistence keys ----------
+  const LS2 = { xp:"br_xp", lvl:"br_lvl", pres:"br_pres", stats:"br_stats",
+    streak:"br_streak", lastDay:"br_lastDay", titles:"br_titles",
+    activeTitle:"br_activeTitle", badges:"br_badges" };
+  const PROG = {
+    xp: +(localStorage.getItem(LS2.xp)||0),
+    lvl: Math.max(1, +(localStorage.getItem(LS2.lvl)||1)),
+    prestige: +(localStorage.getItem(LS2.pres)||0),
+    streak: +(localStorage.getItem(LS2.streak)||0),
+    lastDay: localStorage.getItem(LS2.lastDay)||"",
+    titles: JSON.parse(localStorage.getItem(LS2.titles)||'["Rookie"]'),
+    activeTitle: localStorage.getItem(LS2.activeTitle)||"Rookie",
+    badges: JSON.parse(localStorage.getItem(LS2.badges)||"[]"),
+    stats: Object.assign({runs:0,deaths:0,jumps:0,carrots:0,bestScore:0,
+      obstaclesAvoided:0,powerupsUsed:0,combosMax:0,perfectJumps:0,nearMisses:0,
+      chestsOpened:0}, JSON.parse(localStorage.getItem(LS2.stats)||"{}"))
+  };
+  function xpNeeded(l){ return Math.floor(80 + l*40 + l*l*1.4); }
+  function saveProg(){
+    localStorage.setItem(LS2.xp,PROG.xp); localStorage.setItem(LS2.lvl,PROG.lvl);
+    localStorage.setItem(LS2.pres,PROG.prestige); localStorage.setItem(LS2.streak,PROG.streak);
+    localStorage.setItem(LS2.lastDay,PROG.lastDay);
+    localStorage.setItem(LS2.titles,JSON.stringify(PROG.titles));
+    localStorage.setItem(LS2.activeTitle,PROG.activeTitle);
+    localStorage.setItem(LS2.badges,JSON.stringify(PROG.badges));
+    localStorage.setItem(LS2.stats,JSON.stringify(PROG.stats));
+  }
+  const MILESTONES = {
+    5:{c:20,title:"Sprinter"},10:{c:40,title:"Dasher",badge:1},
+    15:{c:60,title:"Blazer"},20:{c:100,title:"Runner",badge:1},
+    25:{c:140,title:"Racer"},30:{c:180,title:"Ace",badge:1},
+    35:{c:220,title:"Champion"},40:{c:280,title:"Hero",badge:1},
+    45:{c:340,title:"Legend"},50:{c:420,title:"Mythic",badge:1},
+    55:{c:480},60:{c:540,badge:1},65:{c:600},
+    70:{c:680,badge:1},75:{c:750},80:{c:820,badge:1},
+    85:{c:900},90:{c:980,badge:1},95:{c:1080},
+    100:{c:1500,title:"Bunny God",badge:1}
+  };
+  function grantXP(a){
+    if(!a||a<=0) return;
+    PROG.xp += a|0;
+    while(PROG.lvl<100 && PROG.xp>=xpNeeded(PROG.lvl)){
+      PROG.xp -= xpNeeded(PROG.lvl); PROG.lvl++;
+      const m = MILESTONES[PROG.lvl];
+      let msg = "LEVEL "+PROG.lvl+"!";
+      if(m){
+        if(m.c){ carrotBank += m.c; msg += "  +"+m.c+"🥕"; }
+        if(m.title && !PROG.titles.includes(m.title)){ PROG.titles.push(m.title); msg += "  · "+m.title.toUpperCase(); }
+        if(m.badge && !PROG.badges.includes("lvl"+PROG.lvl)) PROG.badges.push("lvl"+PROG.lvl);
+      }
+      levelUpToast(msg);
+      if(state===S_PLAY && bunny){ burst(bunny.x+6,bunny.y+8,"#ffe27a",26); flashT=0.35; flashCol=[255,240,140]; }
+    }
+    saveProg(); if(carrotBank!==+cEl.textContent) cEl.textContent=carrotBank;
+    saveAll();
+  }
+
+  // ---------- Daily reward + login streak ----------
+  function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+  const DAILY = [ {c:10,xp:20},{c:15,xp:35},{c:25,xp:55},{c:35,xp:80},{c:55,xp:120},{c:80,xp:180},{c:150,xp:350} ];
+  function checkDaily(){
+    const t = todayISO();
+    if(PROG.lastDay===t) return;
+    const gap = PROG.lastDay ? Math.round((new Date(t)-new Date(PROG.lastDay))/86400000) : 99;
+    PROG.streak = (gap===1) ? PROG.streak+1 : 1;
+    PROG.lastDay = t;
+    const day = ((PROG.streak-1)%7);
+    const r = DAILY[day];
+    carrotBank += r.c; grantXP(r.xp);
+    saveAll(); cEl.textContent = carrotBank;
+    setTimeout(()=>toast("DAILY +"+r.c+"🥕 +"+r.xp+"XP  STREAK "+PROG.streak+"🔥"), 300);
+  }
+
+  // ---------- Level-up floating toast ----------
+  const luEl = document.createElement("div");
+  luEl.style.cssText = "position:fixed;top:80px;left:50%;transform:translateX(-50%);"
+    + "background:linear-gradient(90deg,#ffb84d,#ff5c8a);color:#1a0f2a;padding:8px 16px;"
+    + "font:12px ui-monospace,monospace;letter-spacing:2px;text-transform:uppercase;"
+    + "font-weight:700;z-index:50;display:none;box-shadow:0 4px 20px #ffb84d88;pointer-events:none";
+  document.body.appendChild(luEl);
+  let luT = 0;
+  function levelUpToast(msg){ luEl.textContent = msg; luEl.style.display="block"; luT = performance.now()+2600; }
+  setInterval(()=>{ if(luT && performance.now()>luT){ luEl.style.display="none"; luT=0; } }, 200);
+
+  // ---------- Power-ups (15) ----------
+  let pupMagnet=0,pupDJump=0,pupHighJump=0,pupCoinX=0,pupScoreX=0,pupGiant=0,pupTiny=0;
+  const POWERUPS = [
+    {id:"shield",   name:"Shield",       col:"#8ad8ff", dur:0,  fx:()=>{ shieldCount=Math.min(3,shieldCount+1); }},
+    {id:"magnet",   name:"Magnet",       col:"#ff8b28", dur:8,  fx:()=>{ pupMagnet=8; }},
+    {id:"djump",    name:"Double Jump",  col:"#c470ff", dur:10, fx:()=>{ pupDJump=10; }},
+    {id:"dash",     name:"Dash",         col:"#ffe27a", dur:0,  fx:()=>{
+      bunny.x = Math.min(bunny.x+64, W-40);
+      for(let i=obstacles.length-1;i>=0;i--){ const o=obstacles[i];
+        if(o.x>bunny.x-70 && o.x<bunny.x+16){ burst(o.x+o.w/2,o.y+o.h/2,"#ffe27a",10); obstacles.splice(i,1); } }
+      invincibleT=Math.max(invincibleT,0.4); screenShake=0.2;
+    }},
+    {id:"highjump", name:"High Jump",    col:"#7bff9a", dur:8,  fx:()=>{ pupHighJump=8; }},
+    {id:"slowmo",   name:"Slow Motion",  col:"#c470ff", dur:5,  fx:()=>{ worldTimeMul=0.5; worldTimeT=5; }},
+    {id:"freeze",   name:"Time Freeze",  col:"#aae0ff", dur:3,  fx:()=>{ freezeT=3; flashT=0.25; flashCol=[170,220,255]; }},
+    {id:"invin",    name:"Invincibility",col:"#ffb0c4", dur:5,  fx:()=>{ invincibleT=Math.max(invincibleT,5); }},
+    {id:"coinx",    name:"Coin ×2",      col:"#ffd24a", dur:10, fx:()=>{ pupCoinX=10; }},
+    {id:"scorex",   name:"Score ×2",     col:"#5fd47a", dur:10, fx:()=>{ pupScoreX=10; }},
+    {id:"lucky",    name:"Lucky Carrot", col:"#ff5c8a", dur:0,  fx:()=>{
+      for(let i=0;i<6;i++) carrots.push({x:W+8+i*22,y:GROUND_Y-40-Math.random()*30,w:10,h:12,t:0,taken:false,type:Math.random()<0.3?"gold":"norm"});
+    }},
+    {id:"giant",    name:"Giant Bunny",  col:"#c470ff", dur:6,  fx:()=>{ pupGiant=6; pupTiny=0; }},
+    {id:"tiny",     name:"Tiny Bunny",   col:"#4aa8ff", dur:8,  fx:()=>{ pupTiny=8; pupGiant=0; }},
+    {id:"fireblast",name:"Fire Blast",   col:"#ff5c1a", dur:0,  fx:()=>{
+      for(const o of obstacles) burst(o.x+o.w/2,o.y+o.h/2,"#ff5c1a",10);
+      obstacles.length=0; flashT=0.35; flashCol=[255,120,60]; screenShake=0.3;
+    }},
+    {id:"lightning",name:"Lightning",    col:"#00f0ff", dur:0,  fx:()=>{
+      const n=Math.min(5,obstacles.length);
+      const list=obstacles.slice().sort((a,b)=>a.x-b.x).slice(0,n);
+      for(const o of list){ const i=obstacles.indexOf(o); if(i>=0) obstacles.splice(i,1); burst(o.x+o.w/2,o.y+o.h/2,"#00f0ff",14); }
+      flashT=0.3; flashCol=[100,220,255]; screenShake=0.2;
+    }}
+  ];
+  const PUP_BY_ID = Object.fromEntries(POWERUPS.map(p=>[p.id,p]));
+  let activePups = [];   // {id,t,col,name,max}
+  let worldPups  = [];   // pickups floating in world
+  let powerupSpawnT = 8;
+  function spawnWorldPup(){
+    const p = POWERUPS[(Math.random()*POWERUPS.length)|0];
+    worldPups.push({x:W+8, y:GROUND_Y-40-Math.random()*40, w:12, h:12, t:0, pid:p.id});
+  }
+  function activatePowerup(pid){
+    const p = PUP_BY_ID[pid]; if(!p) return;
+    p.fx();
+    const dur = Math.max(p.dur, 1.2);
+    const ex = activePups.find(a=>a.id===pid);
+    if(ex){ ex.t = dur; ex.max = dur; }
+    else activePups.push({id:pid,t:dur,max:dur,col:p.col,name:p.name});
+    PROG.stats.powerupsUsed++; saveProg();
+    flashT=Math.max(flashT,0.15);
+    toast(p.name.toUpperCase());
+    try{ snd.shield(); }catch(e){}
+  }
+  function updatePowerups(dt){
+    if(pupMagnet>0) pupMagnet=Math.max(0,pupMagnet-dt);
+    if(pupDJump>0)  pupDJump =Math.max(0,pupDJump -dt);
+    if(pupHighJump>0)pupHighJump=Math.max(0,pupHighJump-dt);
+    if(pupCoinX>0)  pupCoinX =Math.max(0,pupCoinX -dt);
+    if(pupScoreX>0) pupScoreX=Math.max(0,pupScoreX-dt);
+    if(pupGiant>0)  pupGiant =Math.max(0,pupGiant -dt);
+    if(pupTiny>0)   pupTiny  =Math.max(0,pupTiny  -dt);
+    for(const a of activePups) a.t -= dt;
+    activePups = activePups.filter(a=>a.t>0);
+
+    powerupSpawnT -= dt;
+    if(powerupSpawnT<=0){ spawnWorldPup(); powerupSpawnT = 9 + Math.random()*7; }
+    for(const p of worldPups){ p.x -= speed*dt; p.t += dt; }
+    worldPups = worldPups.filter(p=>p.x+p.w>-6);
+    const bx=bunny.x+2, by=bunny.y+2, bw=bunny.w-4, bh=bunny.h-4;
+    for(let i=worldPups.length-1;i>=0;i--){
+      const p=worldPups[i];
+      if(bx<p.x+p.w && bx+bw>p.x && by<p.y+p.h && by+bh>p.y){
+        activatePowerup(p.pid); worldPups.splice(i,1);
+      }
+    }
+  }
+  function drawWorldPups(){
+    for(const p of worldPups){
+      const pd = PUP_BY_ID[p.pid];
+      const bob = Math.sin(p.t*4)*2;
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle=pd.col; ctx.fillRect(p.x-2, p.y+bob-2, 16, 16);
+      ctx.globalAlpha = 1;
+      ctx.save();
+      ctx.translate(p.x+6, p.y+6+bob); ctx.rotate(p.t*1.2);
+      ctx.fillStyle=pd.col; ctx.fillRect(-6,-6,12,12);
+      ctx.fillStyle="#1a0f2a"; ctx.fillRect(-4,-4,8,8);
+      ctx.fillStyle=pd.col; ctx.fillRect(-2,-2,4,4);
+      ctx.restore();
+    }
+  }
+  function drawPupHUD(){
+    let y = 40;
+    for(const a of activePups){
+      ctx.fillStyle="rgba(0,0,0,0.55)"; ctx.fillRect(4,y,74,10);
+      ctx.fillStyle=a.col; ctx.fillRect(4,y,Math.max(2,Math.floor(74*a.t/a.max)),10);
+      ctx.fillStyle="#0a0518"; ctx.font="6px ui-monospace, monospace";
+      ctx.textBaseline="top"; ctx.textAlign="left";
+      ctx.fillText(a.name.toUpperCase().slice(0,14), 6, y+2);
+      y += 12;
+    }
+  }
+
+  // ---------- Obstacle types (15) ----------
+  function typedSpawn(type){
+    const o = {type, x:W+8, y:GROUND_Y-18, w:12, h:18, t:0};
+    switch(type){
+      case "fire": break;
+      case "doubleFire":   o.w=22; break;
+      case "tripleFire":   o.w=34; break;
+      case "rollingLog":   o.w=22; o.h=14; o.y=GROUND_Y-14; o.roll=0; break;
+      case "bees":         o.y=GROUND_Y-56-Math.random()*20; o.h=10; o.w=14; o.osc=Math.random()*Math.PI*2; break;
+      case "crow":         o.y=GROUND_Y-72; o.w=16; o.h=10; o.wing=0; break;
+      case "fallingRocks": o.y=-10; o.vy=60+Math.random()*30; o.w=10; o.h=10; break;
+      case "fireball":     o.y=GROUND_Y-34-Math.random()*30; o.w=12; o.h=12; o.osc=0; break;
+      case "axe":          o.y=GROUND_Y-70; o.h=42; o.w=8; o.swing=Math.random()*Math.PI; break;
+      case "iceBlock":     o.w=16; o.h=16; o.y=GROUND_Y-16; break;
+      case "cracked":      o.w=24; o.h=4;  o.y=GROUND_Y-2; o.pass=true; break;
+      case "thorn":        o.w=14; o.h=10; o.y=GROUND_Y-10; break;
+      case "wind":         o.w=32; o.h=42; o.y=GROUND_Y-42; o.pass=true; o.push=true; break;
+      case "spike":        o.w=10; o.h=10; o.y=GROUND_Y-10; break;
+      case "lava":         o.w=14; o.h=24; o.y=GROUND_Y-24; o.geyser=0; break;
+    }
+    obstacles.push(o);
+  }
+  function drawTypedObstacle(o){
+    const t = o.t||0;
+    switch(o.type){
+      case "doubleFire": case "tripleFire": {
+        const n = o.type==="doubleFire"?2:3;
+        for(let i=0;i<n;i++){
+          const art=(Math.floor(t+i)%2===0)?FIRE_A:FIRE_B;
+          const sway=Math.sin(t*0.6+i)*1|0;
+          drawArt(ctx, art, FIRE_PAL, o.x-1+i*11+sway, GROUND_Y-18, 1);
+        }
+        ctx.fillStyle="rgba(255,120,40,0.15)"; ctx.fillRect(o.x-3,GROUND_Y-16,o.w+6,14);
+        break;
+      }
+      case "rollingLog": {
+        ctx.save(); ctx.translate(o.x+o.w/2,o.y+o.h/2); ctx.rotate(o.roll||0);
+        ctx.fillStyle="#7b4a20"; ctx.fillRect(-o.w/2,-o.h/2,o.w,o.h);
+        ctx.fillStyle="#3d240f"; ctx.fillRect(-o.w/2,-o.h/2,o.w,2); ctx.fillRect(-o.w/2,o.h/2-2,o.w,2);
+        ctx.fillStyle="#a8703a"; ctx.fillRect(-2,-2,4,4);
+        ctx.restore();
+        break;
+      }
+      case "bees": {
+        ctx.fillStyle="#ffe14a"; ctx.fillRect(o.x, o.y, o.w, o.h);
+        ctx.fillStyle="#1a0f2a";
+        for(let i=0;i<3;i++) ctx.fillRect(o.x+2+i*4, o.y, 2, o.h);
+        ctx.fillStyle=(Math.floor(t*2)%2?"#ffffffaa":"#ffffff55");
+        ctx.fillRect(o.x-2, o.y-2, 4, 3); ctx.fillRect(o.x+o.w-2, o.y-2, 4, 3);
+        break;
+      }
+      case "crow": {
+        const flap = Math.floor(o.wing||0)%2;
+        ctx.fillStyle="#1a1030"; ctx.fillRect(o.x+3, o.y+3, o.w-6, o.h-4);
+        ctx.fillStyle="#0a061a";
+        if(flap){ ctx.fillRect(o.x-2,o.y,6,3); ctx.fillRect(o.x+o.w-4,o.y,6,3); }
+        else    { ctx.fillRect(o.x,o.y+5,6,3); ctx.fillRect(o.x+o.w-6,o.y+5,6,3); }
+        ctx.fillStyle="#ff5c8a"; ctx.fillRect(o.x+o.w-2,o.y+4,2,1);
+        ctx.fillStyle="#ffe14a"; ctx.fillRect(o.x+o.w-1,o.y+5,1,1);
+        break;
+      }
+      case "fallingRocks": {
+        ctx.fillStyle="#7a6a5a"; ctx.fillRect(o.x, o.y, o.w, o.h);
+        ctx.fillStyle="#3d3428"; ctx.fillRect(o.x, o.y+o.h-2, o.w, 2);
+        ctx.fillStyle="#a89880"; ctx.fillRect(o.x+2, o.y+1, 3, 2);
+        if(!o.settled){ ctx.fillStyle="rgba(255,180,60,0.35)"; ctx.fillRect(o.x-1,o.y-1,o.w+2,o.h+2); }
+        break;
+      }
+      case "fireball": {
+        ctx.fillStyle="#ff5c1a"; ctx.beginPath(); ctx.arc(o.x+6,o.y+6,6,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="#ffe27a"; ctx.beginPath(); ctx.arc(o.x+6,o.y+6,3,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,120,40,0.35)"; ctx.fillRect(o.x-4, o.y+2, 4, 8);
+        break;
+      }
+      case "axe": {
+        const s = Math.sin(o.swing||0);
+        const cx = o.x+o.w/2, cy = o.y;
+        const bladeX = cx + s*10;
+        ctx.strokeStyle="#8b8fa0"; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(bladeX,o.y+o.h); ctx.stroke();
+        ctx.fillStyle="#cfd5e0"; ctx.fillRect(bladeX-6,o.y+o.h-8,12,6);
+        ctx.fillStyle="#8b8fa0"; ctx.fillRect(bladeX-4,o.y+o.h-4,8,2);
+        break;
+      }
+      case "iceBlock": {
+        ctx.fillStyle="#a8d8f0"; ctx.fillRect(o.x, o.y, o.w, o.h);
+        ctx.fillStyle="#d8eeff"; ctx.fillRect(o.x, o.y, o.w, 2); ctx.fillRect(o.x, o.y, 2, o.h);
+        ctx.fillStyle="#5a8fb8"; ctx.fillRect(o.x+2, o.y+o.h-2, o.w-4, 2);
+        ctx.strokeStyle="rgba(255,255,255,0.6)"; ctx.beginPath();
+        ctx.moveTo(o.x+4,o.y+3); ctx.lineTo(o.x+8,o.y+9); ctx.stroke();
+        break;
+      }
+      case "cracked": {
+        ctx.fillStyle="#5a3a2a"; ctx.fillRect(o.x, o.y, o.w, o.h);
+        ctx.fillStyle="#2a1a10";
+        for(let i=0;i<3;i++) ctx.fillRect(o.x+2+i*8, o.y+1, 1, 2);
+        ctx.fillStyle="rgba(255,180,60,0.55)"; ctx.fillRect(o.x+o.w/2-1, o.y-6, 2, 4);
+        break;
+      }
+      case "thorn": {
+        ctx.fillStyle="#2f5228"; ctx.fillRect(o.x, o.y+o.h-4, o.w, 4);
+        ctx.fillStyle="#5abf50";
+        for(let i=0;i<4;i++){
+          const bx = o.x+2+i*3;
+          ctx.beginPath(); ctx.moveTo(bx,o.y+o.h); ctx.lineTo(bx+1,o.y+2); ctx.lineTo(bx+2,o.y+o.h); ctx.fill();
+        }
+        break;
+      }
+      case "wind": {
+        ctx.strokeStyle=`rgba(200,240,255,${0.3+Math.sin(t*0.5)*0.2})`; ctx.lineWidth=1;
+        for(let i=0;i<5;i++){
+          const yy = o.y + i*8 + ((t*10)%8);
+          ctx.beginPath(); ctx.moveTo(o.x, yy); ctx.lineTo(o.x+o.w, yy-3); ctx.stroke();
+        }
+        break;
+      }
+      case "spike": {
+        ctx.fillStyle="#8b8fa0";
+        for(let i=0;i<3;i++){
+          ctx.beginPath();
+          ctx.moveTo(o.x+i*3, o.y+o.h);
+          ctx.lineTo(o.x+i*3+2, o.y);
+          ctx.lineTo(o.x+i*3+4, o.y+o.h);
+          ctx.fill();
+        }
+        ctx.fillStyle="#cfd5e0"; ctx.fillRect(o.x, o.y+o.h-2, o.w, 2);
+        break;
+      }
+      case "lava": {
+        const active = !o.pass;
+        if(active){
+          ctx.fillStyle="#ff5c1a"; ctx.fillRect(o.x, o.y, o.w, o.h);
+          ctx.fillStyle="#ffe27a"; ctx.fillRect(o.x+2, o.y, o.w-4, 4);
+          ctx.fillStyle="#ff8b28"; ctx.fillRect(o.x+3, o.y+8, o.w-6, 2);
+        } else {
+          ctx.fillStyle="#5a2a1a"; ctx.fillRect(o.x, GROUND_Y-4, o.w, 4);
+          ctx.fillStyle="rgba(255,180,60,0.4)"; ctx.fillRect(o.x, GROUND_Y-6, o.w, 2);
+        }
+        break;
+      }
+      default: { // fallback fire
+        const art=(Math.floor(t)%2===0)?FIRE_A:FIRE_B;
+        const sway=Math.sin(t*0.6)*1|0;
+        drawArt(ctx, art, FIRE_PAL, o.x-1+sway, GROUND_Y-18, 1);
+        ctx.fillStyle="rgba(255,120,40,0.15)"; ctx.fillRect(o.x-3,GROUND_Y-16,o.w+6,14);
+      }
+    }
+  }
+
+  // Wrap the base draw / spawn functions
+  drawObstacles = function(){
+    for(const o of obstacles){
+      if(!o.type || o.type==="fire"){
+        const art=(Math.floor(o.t)%2===0)?FIRE_A:FIRE_B;
+        const sway=Math.sin(o.t*0.6)*1|0;
+        drawArt(ctx, art, FIRE_PAL, o.x-1+sway, GROUND_Y-18, 1);
+        ctx.fillStyle="rgba(255,120,40,0.15)"; ctx.fillRect(o.x-3,GROUND_Y-16,o.w+6,14);
+      } else drawTypedObstacle(o);
+    }
+    drawChest(); drawWorldPups();
+  };
+  spawnFire = function(){
+    const pool = ["fire","fire","fire","doubleFire","thorn","spike","iceBlock"];
+    if(distance>600)  pool.push("tripleFire","rollingLog","fireball","cracked");
+    if(distance>1500) pool.push("bees","crow","axe","fallingRocks");
+    if(distance>3000) pool.push("wind","lava");
+    typedSpawn(pool[(Math.random()*pool.length)|0]);
+  };
+
+  // ---------- Carrot variants (6) ----------
+  const CARROT_PALS = {
+    norm: CARROT_PAL,
+    gold: {O:"#ffd24a",o:"#ffec8a",D:"#a87a20",G:"#3fbf4a",g:"#2f8f39"},
+    rainbow: CARROT_PAL,
+    crystal: {O:"#aae0ff",o:"#e0f8ff",D:"#4a80c0",G:"#5fd47a",g:"#2f8f39"},
+    mystery: {O:"#c470ff",o:"#e0b8ff",D:"#5a2a80",G:"#c470ff",g:"#5a2a80"},
+    giant: CARROT_PAL
+  };
+  function pickCarrotType(){
+    const r = Math.random();
+    if(r<0.66) return "norm";
+    if(r<0.83) return "gold";
+    if(r<0.91) return "crystal";
+    if(r<0.96) return "rainbow";
+    if(r<0.985) return "mystery";
+    return "giant";
+  }
+  spawnCarrot = function(){
+    const y = GROUND_Y-24-(Math.random()<0.4?30:0);
+    carrots.push({x:W+8, y, w:10, h:12, t:Math.random()*10, taken:false, type:pickCarrotType()});
+  };
+  function drawTypedCarrot(c){
+    const bob=Math.sin(c.t*1.5)*1|0;
+    if(c.type==="giant"){
+      ctx.save(); ctx.translate(c.x-3, c.y-4+bob); ctx.scale(1.6,1.6);
+      drawArt(ctx, CARROT, CARROT_PAL, 0, 0, 1);
+      ctx.restore();
+      ctx.fillStyle="rgba(255,220,120,0.6)"; ctx.fillRect(c.x-2, c.y+bob-1, 2, 2);
+    } else if(c.type==="rainbow"){
+      const hue = (performance.now()/6 + c.x)%360;
+      ctx.save(); ctx.filter=`hue-rotate(${hue}deg) saturate(1.6)`;
+      drawArt(ctx, CARROT, CARROT_PAL, c.x, c.y+bob, 1);
+      ctx.restore(); ctx.filter="none";
+    } else {
+      drawArt(ctx, CARROT, CARROT_PALS[c.type]||CARROT_PAL, c.x, c.y+bob, 1);
+    }
+    if(c.type==="mystery"){
+      ctx.fillStyle=`rgba(196,112,255,${0.3+Math.sin(c.t*3)*0.2})`;
+      ctx.fillRect(c.x-2, c.y+bob-2, c.w+4, c.h+4);
+      ctx.fillStyle="#fff"; ctx.font="6px ui-monospace, monospace"; ctx.textAlign="center";
+      ctx.fillText("?", c.x+5, c.y+bob+2);
+    } else if(c.type==="crystal"){
+      ctx.fillStyle=`rgba(170,220,255,${0.3+Math.sin(c.t*4)*0.2})`;
+      ctx.fillRect(c.x-1, c.y+bob-1, c.w+2, c.h+2);
+    } else if(c.type==="gold"){
+      ctx.fillStyle=`rgba(255,220,80,${0.25+Math.sin(c.t*5)*0.15})`;
+      ctx.fillRect(c.x-1, c.y+bob-1, c.w+2, c.h+2);
+    }
+  }
+  drawCarrots = function(){
+    for(const c of carrots){
+      if(!c.type || c.type==="norm"){
+        const bob=Math.sin(c.t*1.5)*1|0;
+        drawArt(ctx, CARROT, CARROT_PAL, c.x, c.y+bob, 1);
+      } else drawTypedCarrot(c);
+    }
+  };
+
+  // ---------- Combo, near-miss, perfect jump ----------
+  let combo = 0, comboT = 0;
+  function updateCombo(dt){
+    if(comboT>0){ comboT -= dt; if(comboT<=0) combo=0; }
+    for(const o of obstacles){
+      if(o._counted) continue;
+      if(o.pass) continue;
+      if(o.x+o.w < bunny.x){
+        o._counted = true;
+        PROG.stats.obstaclesAvoided++;
+        if(!bunny.onGround){
+          combo++; comboT = 2.5;
+          if(combo>PROG.stats.combosMax) PROG.stats.combosMax = combo;
+          PROG.stats.nearMisses++;
+          score += 10*combo;
+          grantXP(2+combo);
+          burst(o.x+o.w/2, o.y-2, "#ffe27a", 6);
+          // perfect jump: close vertical proximity
+          const dy = (bunny.y+bunny.h) - o.y;
+          if(dy>=-4 && dy<=6){ PROG.stats.perfectJumps++; score+=20; burst(bunny.x+6,bunny.y+8,"#7bff9a",6); }
+        }
+      }
+    }
+  }
+
+  // ---------- Chest + bonus round events ----------
+  let chest = null, bonusRoundT = 0, nextEventScore = 500;
+  function updateEvents(dt){
+    if(chest){
+      chest.x -= speed*dt; chest.t = (chest.t||0)+dt;
+      if(chest.x+chest.w<-10) chest=null;
+      else {
+        const bx=bunny.x+2, by=bunny.y+2;
+        if(bx<chest.x+chest.w && bx+10>chest.x && by<chest.y+chest.h && by+12>chest.y){
+          openChest(); chest=null;
+        }
+      }
+    }
+    if(bonusRoundT>0){
+      bonusRoundT -= dt;
+      if(Math.random()<0.5){
+        carrots.push({x:W+8,y:GROUND_Y-30-Math.random()*50,w:10,h:12,t:0,taken:false,
+          type: Math.random()<0.25?"gold":"norm"});
+      }
+      if(bonusRoundT<=0){ toast("BONUS ROUND END"); flashT=0.3; flashCol=[255,220,120]; }
+    }
+    if(score>=nextEventScore){
+      nextEventScore = score + 400 + Math.random()*400;
+      const roll = Math.random();
+      if(roll<0.4){ chest = {x:W+8, y:GROUND_Y-16, w:14, h:14, t:0}; toast("REWARD CHEST INCOMING"); }
+      else if(roll<0.6){ bonusRoundT = 6; toast("BONUS ROUND · CARROT RAIN"); obstacles.length = 0; }
+      else if(roll<0.8){ spawnWorldPup(); spawnWorldPup(); toast("POWER-UP DROP"); }
+    }
+  }
+  function openChest(){
+    const c = 20 + Math.floor(Math.random()*40);
+    const x = 30 + Math.floor(Math.random()*60);
+    carrotBank += c; grantXP(x);
+    burst(bunny.x+6, bunny.y+8, "#ffd24a", 30);
+    flashT=0.35; flashCol=[255,220,120]; screenShake=0.3;
+    PROG.stats.chestsOpened++; saveProg();
+    toast("CHEST +"+c+"🥕  +"+x+"XP");
+    if(Math.random()<0.6){ const p = POWERUPS[(Math.random()*POWERUPS.length)|0]; activatePowerup(p.id); }
+  }
+  function drawChest(){
+    if(!chest) return;
+    const bob = Math.sin(chest.t*4)*1|0;
+    ctx.fillStyle=`rgba(255,220,120,${0.3+Math.sin(chest.t*6)*0.2})`;
+    ctx.fillRect(chest.x-2, chest.y+bob-2, chest.w+4, chest.h+4);
+    ctx.fillStyle="#a8703a"; ctx.fillRect(chest.x, chest.y+bob, chest.w, chest.h);
+    ctx.fillStyle="#ffd24a"; ctx.fillRect(chest.x, chest.y+bob+chest.h/2-1, chest.w, 2);
+    ctx.fillStyle="#3d240f"; ctx.fillRect(chest.x+chest.w/2-1, chest.y+bob+chest.h/2-1, 2, 3);
+  }
+
+  // ---------- equippedSkin wrap for temporary powerup traits ----------
+  const _origEquippedSkin = equippedSkin;
+  equippedSkin = function(){
+    const sk = _origEquippedSkin();
+    if(pupMagnet<=0 && pupDJump<=0 && pupHighJump<=0) return sk;
+    const t = Object.assign({}, sk.traits||{});
+    if(pupMagnet>0)   t.magnet     = Math.max(t.magnet||0, 130);
+    if(pupDJump>0)    t.doubleJump = true;
+    if(pupHighJump>0) t.highJump   = Math.max(t.highJump||1, 1.35);
+    return Object.assign({}, sk, {traits:t});
+  };
+
+  // ---------- Wrap update: pre-hook (typed carrot bonuses) + post-hook (systems) ----------
+  const _origUpdate = update;
+  update = function(dt){
+    // Pre-hook: typed carrot bonuses BEFORE original picks them up.
+    if(state===S_PLAY && bunny){
+      const bx=bunny.x+2, by=bunny.y+2, bw=bunny.w-4, bh=bunny.h-4;
+      for(const c of carrots){
+        if(c.taken || !c.type || c.type==="norm") continue;
+        if(bx<c.x+c.w && bx+bw>c.x && by<c.y+c.h && by+bh>c.y){
+          const scoreMul = (pupScoreX>0?2:1), coinMul = (pupCoinX>0?2:1);
+          let sb=0, cb=0, xb=0;
+          if(c.type==="gold"){    sb=25; cb=2; xb=6; }
+          else if(c.type==="crystal"){ sb=15; cb=1; xb=20; }
+          else if(c.type==="rainbow"){ const p=POWERUPS[(Math.random()*POWERUPS.length)|0]; activatePowerup(p.id); sb=5; cb=1; xb=6; }
+          else if(c.type==="mystery"){
+            const r=Math.random();
+            if(r<0.33){ cb+=9; toast("MYSTERY +"+(cb+1)+"🥕"); }
+            else if(r<0.66){ sb+=75; toast("MYSTERY +"+(sb+25)+" SCORE"); }
+            else { const pp=POWERUPS[(Math.random()*POWERUPS.length)|0]; activatePowerup(pp.id); }
+          }
+          else if(c.type==="giant"){ sb=125; cb=7; xb=25; }
+          score += sb*scoreMul; carrotBank += cb*coinMul; grantXP(xb);
+          burst(c.x+5, c.y+6, "#ffe27a", 10);
+        }
+      }
+      // Bunny size for giant/tiny
+      if(pupGiant>0){ bunny.w=18; bunny.h=22; }
+      else if(pupTiny>0){ bunny.w=8; bunny.h=11; }
+      else { bunny.w=12; bunny.h=16; }
+    }
+    _origUpdate(dt);
+    if(state!==S_PLAY) return;
+    updatePowerups(dt);
+    updateEvents(dt);
+    updateCombo(dt);
+    // Survival XP: 1 xp per 2 seconds
+    _survAcc = (_survAcc||0) + dt;
+    if(_survAcc>=2){ _survAcc=0; grantXP(1); }
+  };
+  let _survAcc = 0;
+
+  // ---------- Wrap reset (session cleanup) ----------
+  const _origReset = reset;
+  reset = function(){
+    _origReset();
+    activePups.length=0; worldPups.length=0; powerupSpawnT = 8;
+    pupMagnet=pupDJump=pupHighJump=pupCoinX=pupScoreX=pupGiant=pupTiny=0;
+    combo=0; comboT=0; chest=null; bonusRoundT=0; nextEventScore=500; _survAcc=0;
+    // Milestone starting bonuses
+    if(PROG.badges.includes("lvl20")) carrotBank += 5;
+    if(PROG.badges.includes("lvl50")) { shieldCount = Math.max(shieldCount,1); }
+    if(PROG.badges.includes("lvl100")){ pupCoinX = 15; activePups.push({id:"coinx",t:15,max:15,col:"#ffd24a",name:"Coin ×2"}); }
+  };
+
+  // ---------- Session/run tracking via state transitions ----------
+  let _prevState = state;
+  setInterval(()=>{
+    if(_prevState!==S_PLAY && state===S_PLAY){ PROG.stats.runs++; saveProg(); }
+    if(_prevState===S_PLAY && state===S_OVER){
+      PROG.stats.deaths++;
+      const sc = Math.floor(score);
+      if(sc>PROG.stats.bestScore) PROG.stats.bestScore = sc;
+      grantXP(Math.floor(sc/8));
+      saveProg();
+    }
+    _prevState = state;
+  }, 100);
+
+  // ---------- Extend ability HUD with pups + combo + level bar ----------
+  const _origAbHud = drawAbilityHUD;
+  drawAbilityHUD = function(){
+    _origAbHud();
+    drawPupHUD();
+    // XP mini-bar (top-right)
+    const barW=80, barH=4;
+    const x = W - barW - 6, y = 8;
+    const need = xpNeeded(PROG.lvl);
+    const ratio = PROG.lvl>=100 ? 1 : Math.min(1, PROG.xp/need);
+    ctx.fillStyle="rgba(0,0,0,0.6)"; ctx.fillRect(x-1,y-1,barW+2,barH+2);
+    ctx.fillStyle="#ffb84d"; ctx.fillRect(x,y,Math.floor(barW*ratio),barH);
+    ctx.fillStyle="#fff5d6"; ctx.font="6px ui-monospace, monospace";
+    ctx.textAlign="right"; ctx.textBaseline="top";
+    ctx.fillText("LV "+PROG.lvl+(PROG.prestige?" ✦"+PROG.prestige:""), W-6, y+barH+1);
+    if(combo>1){
+      ctx.textAlign="center"; ctx.fillStyle="#ffe27a"; ctx.font="10px ui-monospace, monospace";
+      ctx.fillText("×"+combo+" COMBO", W/2, 18);
+    }
+    if(bonusRoundT>0){
+      ctx.textAlign="center"; ctx.fillStyle="#ffd24a"; ctx.font="8px ui-monospace, monospace";
+      ctx.fillText("BONUS "+bonusRoundT.toFixed(1)+"s", W/2, 32);
+    }
+  };
+
+  // ---------- Extend main menu with XP bar / title / profile hint ----------
+  const _origDrawMenu = drawMenu;
+  drawMenu = function(){
+    _origDrawMenu();
+    const barW = 200, barH = 6, bx = (W-barW)>>1, by = 156;
+    const need = xpNeeded(PROG.lvl);
+    const ratio = PROG.lvl>=100 ? 1 : Math.min(1, PROG.xp/need);
+    ctx.fillStyle="rgba(0,0,0,0.6)"; ctx.fillRect(bx-1,by-1,barW+2,barH+2);
+    const g = ctx.createLinearGradient(bx,by,bx+barW,by);
+    g.addColorStop(0,"#ffb84d"); g.addColorStop(1,"#ff5c8a");
+    ctx.fillStyle=g; ctx.fillRect(bx,by,Math.floor(barW*ratio),barH);
+    text("LV "+PROG.lvl+(PROG.prestige?" ✦"+PROG.prestige:"")+"   "+PROG.xp+" / "+need+" XP", W/2, by+8, 7, "#fff5d6");
+    text("TITLE: "+PROG.activeTitle.toUpperCase()+"   STREAK "+PROG.streak+"🔥", W/2, by+18, 7, "#ffb066");
+    text("F — PROFILE   E — ABILITY   S — SHOP", W/2, 224, 6, "#fff5d688");
+  };
+
+  // ---------- Profile DOM overlay ----------
+  const profileEl = document.createElement("div");
+  profileEl.id = "profile";
+  profileEl.style.cssText = "position:fixed;inset:0;background:radial-gradient(ellipse at center,#12081e 0%,#05030a 100%);"
+    +"display:none;flex-direction:column;z-index:25;padding:16px 20px;color:#f8f5e6;"
+    +"font-family:ui-monospace,monospace;letter-spacing:1px;overflow:auto";
+  profileEl.innerHTML =
+    '<div style="display:flex;align-items:center;gap:12px;padding-bottom:10px;border-bottom:1px solid #ffffff22">'
+    +'<h1 style="margin:0;font-size:18px;letter-spacing:3px;color:#ffb84d;text-shadow:2px 2px 0 #000">PROFILE</h1>'
+    +'<span style="font-size:10px;letter-spacing:2px;color:#8f83b0">RPG PROGRESSION · LV 1-100 · PRESTIGE</span>'
+    +'<button id="closeProfile" style="margin-left:auto;background:#2a0f24;border:1px solid #ff5c8a;color:#fff;padding:6px 12px;cursor:pointer;font-family:inherit;letter-spacing:2px;text-transform:uppercase;font-size:11px">CLOSE ✕</button>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding-top:12px">'
+    +'<div style="background:#0f0820;border:2px solid var(--r-legend);padding:12px">'
+    +'<div style="font-size:16px;letter-spacing:2px;color:#ffb84d" id="pfLvl">LV 1</div>'
+    +'<div style="font-size:10px;color:#a89ecf;margin-top:6px" id="pfXP">0 / 100 XP</div>'
+    +'<div style="background:#000;height:8px;margin-top:4px;border:1px solid #ffffff22"><div id="pfBar" style="height:100%;background:linear-gradient(90deg,#ffb84d,#ff5c8a);width:0%"></div></div>'
+    +'<div style="margin-top:12px;font-size:10px;color:#cfc7e6">TITLE: <b id="pfTitle" style="color:#ffb84d"></b></div>'
+    +'<div style="font-size:10px;color:#cfc7e6">STREAK: <b id="pfStreak" style="color:#ffe27a"></b></div>'
+    +'<div style="font-size:10px;color:#cfc7e6">PRESTIGE: <b id="pfPrestige" style="color:#c470ff"></b></div>'
+    +'<button id="pfPrestigeBtn" style="margin-top:10px;padding:8px 14px;background:linear-gradient(90deg,#c470ff,#ff5c8a);color:#1a0f2a;border:none;cursor:pointer;font-family:inherit;letter-spacing:2px;font-size:11px;font-weight:700;display:none">PRESTIGE ✦ +BONUS</button>'
+    +'</div>'
+    +'<div style="background:#0f0820;border:2px solid var(--r-rare);padding:12px">'
+    +'<div style="font-size:12px;letter-spacing:2px;color:#4aa8ff;margin-bottom:8px">LIFETIME STATS</div>'
+    +'<div id="pfStats" style="font-size:10px;color:#cfc7e6;line-height:1.7"></div>'
+    +'</div>'
+    +'<div style="background:#0f0820;border:2px solid var(--r-uncommon);padding:12px;grid-column:1/3">'
+    +'<div style="font-size:12px;letter-spacing:2px;color:#5fd47a;margin-bottom:8px">TITLES · CLICK TO EQUIP</div>'
+    +'<div id="pfTitles" style="display:flex;flex-wrap:wrap;gap:6px"></div>'
+    +'</div>'
+    +'<div style="background:#0f0820;border:2px solid var(--r-epic);padding:12px;grid-column:1/3">'
+    +'<div style="font-size:12px;letter-spacing:2px;color:#c470ff;margin-bottom:8px">MILESTONE BADGES</div>'
+    +'<div id="pfBadges" style="display:flex;flex-wrap:wrap;gap:8px"></div>'
+    +'</div>'
+    +'<div style="background:#0f0820;border:2px solid #ffffff22;padding:12px;grid-column:1/3">'
+    +'<div style="font-size:12px;letter-spacing:2px;color:#ffb066;margin-bottom:8px">POWER-UPS · 15 TYPES · SPAWN IN-RUN</div>'
+    +'<div id="pfPups" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px"></div>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(profileEl);
+  document.getElementById("closeProfile").onclick = ()=> toggleProfile(false);
+  function toggleProfile(force){
+    const on = force===undefined ? profileEl.style.display!=="flex" : force;
+    if(on){ renderProfile(); profileEl.style.display="flex"; }
+    else profileEl.style.display="none";
+  }
+  function renderProfile(){
+    const need = xpNeeded(PROG.lvl);
+    document.getElementById("pfLvl").textContent = "LV "+PROG.lvl+(PROG.prestige?"  ✦"+PROG.prestige:"");
+    document.getElementById("pfXP").textContent = PROG.xp+" / "+need+" XP";
+    document.getElementById("pfBar").style.width = Math.min(100, PROG.xp/need*100)+"%";
+    document.getElementById("pfTitle").textContent = PROG.activeTitle;
+    document.getElementById("pfStreak").textContent = PROG.streak+" DAYS 🔥";
+    document.getElementById("pfPrestige").textContent = PROG.prestige+" ✦";
+    document.getElementById("pfPrestigeBtn").style.display = PROG.lvl>=100?"inline-block":"none";
+    const s = PROG.stats;
+    document.getElementById("pfStats").innerHTML =
+      "RUNS: <b>"+s.runs+"</b><br>DEATHS: <b>"+s.deaths+"</b><br>JUMPS: <b>"+s.jumps+"</b><br>"
+      +"CARROTS: <b>"+s.carrots+"</b><br>OBSTACLES AVOIDED: <b>"+s.obstaclesAvoided+"</b><br>"
+      +"NEAR MISSES: <b>"+s.nearMisses+"</b><br>PERFECT JUMPS: <b>"+s.perfectJumps+"</b><br>"
+      +"MAX COMBO: <b>"+s.combosMax+"</b><br>POWER-UPS USED: <b>"+s.powerupsUsed+"</b><br>"
+      +"CHESTS OPENED: <b>"+s.chestsOpened+"</b><br>BEST SCORE: <b>"+s.bestScore+"</b>";
+    const tt = document.getElementById("pfTitles"); tt.innerHTML="";
+    for(const t of PROG.titles){
+      const b = document.createElement("button");
+      b.style.cssText="padding:5px 10px;font-family:inherit;font-size:10px;letter-spacing:1px;"
+        +"background:"+(PROG.activeTitle===t?"#ffb84d":"#160b28")+";color:"+(PROG.activeTitle===t?"#1a0f2a":"#fff")
+        +";border:1px solid #ffffff33;cursor:pointer;text-transform:uppercase";
+      b.textContent=t;
+      b.onclick=()=>{ PROG.activeTitle=t; saveProg(); renderProfile(); };
+      tt.appendChild(b);
+    }
+    const bb = document.getElementById("pfBadges"); bb.innerHTML="";
+    for(const lvl of Object.keys(MILESTONES).sort((a,b)=>+a-+b)){
+      const m = MILESTONES[lvl];
+      const has = PROG.lvl>=+lvl;
+      const d = document.createElement("div");
+      d.style.cssText="width:52px;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;"
+        +"background:"+(has?"linear-gradient(135deg,#ffb84d,#ff5c8a)":"#160b28")
+        +";color:"+(has?"#1a0f2a":"#4a4060")+";font-size:12px;font-weight:700;letter-spacing:1px;"
+        +"border:1px solid "+(has?"#ffb84d":"#ffffff22");
+      d.innerHTML = (has?lvl:"?")+"<span style='font-size:7px;margin-top:2px;letter-spacing:1px'>"+(m.c?"+"+m.c+"🥕":"")+"</span>";
+      d.title = has?("Milestone LV "+lvl):("Reach LV "+lvl);
+      bb.appendChild(d);
+    }
+    const pp = document.getElementById("pfPups"); pp.innerHTML="";
+    for(const p of POWERUPS){
+      const d = document.createElement("div");
+      d.style.cssText="background:#0a0518;border:1px solid "+p.col+"55;padding:6px 8px;display:flex;align-items:center;gap:6px;font-size:9px;letter-spacing:1px;color:#cfc7e6";
+      d.innerHTML = '<span style="display:inline-block;width:12px;height:12px;background:'+p.col+'"></span>'
+        +'<b style="color:'+p.col+';text-transform:uppercase">'+p.name+'</b>'
+        +(p.dur?'<span style="margin-left:auto;color:#8f83b0">'+p.dur+'s</span>':'');
+      pp.appendChild(d);
+    }
+  }
+  document.getElementById("pfPrestigeBtn").onclick = ()=>{
+    if(PROG.lvl<100) return;
+    PROG.prestige++; PROG.lvl=1; PROG.xp=0;
+    const bonus = 200 + PROG.prestige*100;
+    carrotBank += bonus; saveAll(); cEl.textContent = carrotBank;
+    const t = "Prestige "+PROG.prestige;
+    if(!PROG.titles.includes(t)) PROG.titles.push(t);
+    PROG.activeTitle = t; saveProg();
+    toast("PRESTIGE ✦ +"+bonus+"🥕"); levelUpToast("PRESTIGE ✦ "+PROG.prestige);
+    renderProfile();
+  };
+
+  // ---------- Keyboard: F opens profile, avoid triggering inside inputs ----------
+  addEventListener("keydown", (e)=>{
+    if(document.activeElement && document.activeElement.tagName==="INPUT") return;
+    if(e.code==="KeyF"){ e.preventDefault(); toggleProfile(); }
+    // Jump stat tracking (only on ground jumps)
+    if((e.code==="Space"||e.code==="ArrowUp") && state===S_PLAY && bunny && bunny.onGround){
+      PROG.stats.jumps++;
+    }
+  });
+  cvs.addEventListener("pointerdown", ()=>{
+    if(state===S_PLAY && bunny && bunny.onGround) PROG.stats.jumps++;
+  });
+
+  // ---------- Daily check on load ----------
+  checkDaily();
+
+  // ---------- initial render (in case user opens shop soon) ----------
+  renderShop();
+})();
+</script>
+</body>
+</html>

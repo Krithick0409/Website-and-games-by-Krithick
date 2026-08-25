@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Super Simple Quiz</title>
+    <style>
+        /* This makes the background dark and centers the card */
+        body { background: #2c3e50; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; color: white; }
+        
+        /* The White Card */
+        .quiz-card { background: white; color: #333; padding: 25px; border-radius: 15px; width: 100%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        
+        /* The Header */
+        marquee { background: black; color: yellow; padding: 10px; font-weight: bold; border-radius: 5px; margin-bottom: 20px; }
+        
+        /* Question Styling */
+        .question { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        
+        /* Hover Effect for Buttons */
+        .btn { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; }
+        .btn:hover { background: #2ecc71; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-card">
+    <marquee scrollamount="12" onmouseover="this.stop();" onmouseout="this.start();"> 
+        WELCOME TO THE ULTIMATE QUIZ!! 🏆 😁 
+    </marquee>
+
+    <h2 style="color: #2980b9; text-align: center;">Test Your Knowledge!</h2>
+
+    <form id="quizForm">
+        <!-- Name Input -->
+        <p><b>Your Name:</b></p>
+        <input type="text" id="userName" style="width:95%; padding:10px;" placeholder="Enter name..." required>
+
+        <hr>
+
+        <!-- Question 1 -->
+        <div class="question">
+            <p><b>1. What is the capital of France?</b></p>
+            <input type="radio" name="q1" value="wrong"> London <br>
+            <input type="radio" name="q1" value="correct"> Paris <br>
+            <input type="radio" name="q1" value="wrong"> Berlin
+        </div>
+
+        <!-- Question 2 -->
+        <div class="question">
+            <p><b>2. Which planet is known as the Red Planet?</b></p>
+            <input type="radio" name="q2" value="wrong"> Venus <br>
+            <input type="radio" name="q2" value="correct"> Mars <br>
+            <input type="radio" name="q2" value="wrong"> Jupiter
+        </div>
+
+        <!-- Question 3 -->
+        <div class="question">
+            <p><b>3. What is 5 + 5?</b></p>
+            <input type="radio" name="q3" value="wrong"> 55 <br>
+            <input type="radio" name="q3" value="correct"> 10 <br>
+            <input type="radio" name="q3" value="wrong"> 15
+        </div>
+
+        <!-- Submit Button -->
+        <button type="button" class="btn" onclick="checkScore()">SUBMIT ANSWERS</button>
+    </form>
+</div>
+
+<script>
+    function checkScore() {
+        let score = 0;
+        let name = document.getElementById("userName").value;
+        
+        // Count how many 'correct' values were picked
+        let answers = document.querySelectorAll('input[type="radio"]:checked');
+        
+        answers.forEach(answer => {
+            if(answer.value === "correct") {
+                score++;
+            }
+        });
+
+        if(name === "") {
+            alert("Please enter your name first!");
+        } else {
+            alert("Great job " + name + "! Your score is: " + score + "/3");
+        }
+    }
+</script>
+
+</body>
+</html>
+
