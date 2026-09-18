@@ -421,8 +421,8 @@ body>header,body>main,body>section,body>footer,body>.modal,body>#toast{position:
       </div>
       <div class="glass" style="padding:1.5rem">
         <h3 style="font-size:.875rem;font-weight:600">Play something</h3>
-        <p class="muted" style="margin-top:.5rem;font-size:.875rem">Every game on this site is embedded right in this page — no download, no install.</p>
-        <button class="btn btn-primary btn-sm" style="margin-top:1rem" data-play="bunny-runner"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg> Play Bunny Runner</button>
+        <p class="muted" style="margin-top:.5rem;font-size:.875rem">Every game on this site opens in its own tab from the project cards above — no download, no install.</p>
+        <a class="btn btn-primary btn-sm" style="margin-top:1rem" href="./bunny_runner_v2.html" target="_blank" rel="noopener noreferrer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg> Play Bunny Runner</a>
       </div>
     </div>
   </div>
@@ -449,7 +449,7 @@ body>header,body>main,body>section,body>footer,body>.modal,body>#toast{position:
     <div class="modal-head">
       <span class="icon-tile" style="height:2rem;width:2rem"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg></span>
       <div><p style="font-size:.875rem;font-weight:600" id="gameTitle">Bunny Runner</p>
-      <p class="mono muted" style="font-size:.6875rem">running fully offline inside this page</p></div>
+      <p class="mono muted" style="font-size:.6875rem">local game file loaded in its own tab</p></div>
       <button class="btn btn-ghost btn-sm" style="margin-left:auto" id="closeGame"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M18 6 6 18M6 6l12 12"/></svg> Close</button>
     </div>
     <div id="gameHost" style="flex:1;display:flex"></div>
@@ -526,7 +526,8 @@ const PROFILE = {
       description:
         "Bunny Runner is a one-button endless runner. The bunny runs by itself, you time jumps over obstacles and grab carrots along the way. I wrote the game loop, jump physics, obstacle spawning and the scoring/shop systems by hand in plain JavaScript on a canvas.",
       tags: ["Game Dev", "JavaScript", "Canvas", "Physics"],
-      playable: true, // opens the embedded game
+      playable: true,
+      playUrl: "./bunny_runner_v2.html",
       aiKeywords: ["bunny", "runner", "bunny runner", "dino", "carrot", "endless", "jump"],
     },
     {
@@ -538,6 +539,7 @@ const PROFILE = {
         "Hand Cricket Franchise turns the playground game into a full management sim. You get a budget, bid for players in an auction with a shifting market trend, build and train a squad, then play ball-by-ball hand cricket matches with innings, wickets and run chases. It also tracks a league table, achievements, match history, a leaderboard and multiple save slots — all in plain JavaScript.",
       tags: ["Game Dev", "JavaScript", "Simulation", "Game Logic", "Save System"],
       playable: true,
+      playUrl: "./index_3.html",
       aiKeywords: ["hand cricket", "cricket", "franchise", "auction", "squad", "dynasty", "league", "match", "innings", "wicket"],
     },
     {
@@ -549,6 +551,7 @@ const PROFILE = {
         "A from-scratch UNO implementation: full deck with number and action cards — Skip, Reverse, Draw Two, Wild and Wild Draw Four — colour matching, turn direction, drawing from the deck and a computer opponent that picks legal plays. It also has a two-player hotseat mode and a running status log of what happened each turn.",
       tags: ["Game Dev", "JavaScript", "Card Game", "Game Logic", "DOM"],
       playable: true,
+      playUrl: "./uno3.html",
       aiKeywords: ["uno", "card game", "cards", "wild", "draw four", "skip", "reverse", "hotseat"],
     },
     {
@@ -560,6 +563,7 @@ const PROFILE = {
         "Exam Slayer V2 makes revision feel like a game. Questions are tagged by difficulty (up to Boss questions), you get 3 lives, a 20-second timer per question, XP and levels for correct answers, a streak counter and an explanation after each answer so you actually learn from mistakes. Questions are shuffled every run.",
       tags: ["JavaScript", "Quiz", "Gamification", "Timer", "UI"],
       playable: true,
+      playUrl: "./v2examslayer.html",
       aiKeywords: ["exam slayer", "exam", "slayer", "revision", "study", "xp", "lives", "boss question", "quiz game"],
     },
     {
@@ -571,6 +575,7 @@ const PROFILE = {
         "A deliberately simple MCQ quiz built with a plain HTML form: you enter your name, answer multiple-choice general-knowledge questions with radio buttons, and submitting scores your answers and shows a personalised result. It was an early exercise in forms, JavaScript scoring and basic styling.",
       tags: ["HTML", "CSS", "JavaScript", "Forms", "Quiz"],
       playable: true,
+      playUrl: "./mcq2.html",
       aiKeywords: ["ultimate quiz", "mcq", "multiple choice", "quiz", "trivia", "questions", "simple quiz"],
     },
     {
@@ -653,7 +658,7 @@ function renderProjects() {
       <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:.5rem">${p.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div>
       <div style="margin-top:auto;padding-top:1.5rem;display:flex;flex-wrap:wrap;gap:.5rem">
         <button class="btn btn-secondary btn-sm" data-toggle="${p.slug}"><span>Read more</span> <span class="arrow" style="display:inline-flex">${ICON.chevron}</span></button>
-        ${p.playable ? `<button class="btn btn-primary btn-sm" data-play="${p.slug}">${ICON.gamepad} Play now</button>` : ""}
+        ${p.playable ? `<a class="btn btn-primary btn-sm" href="${esc(p.playUrl)}" target="_blank" rel="noopener noreferrer">${ICON.gamepad} Play now</a>` : ""}
       </div>
     </article>`).join("") + `
     <article class="future">
@@ -771,13 +776,13 @@ const NOVA = (() => {
     { id: "games",
       keywords: ["game", "games", "what games", "games has he made", "game dev", "game development"],
       reply: () => ({
-        text: `${p.name}'s games are all embedded on this page:\n\n${p.projects.filter((x) => x.playable).map((x) => `**${x.title}** — ${x.blurb}`).join("\n\n")}\n\nEach one has a **Play now** button on its card that opens it in an overlay.`,
+        text: `${p.name}'s games live as separate HTML files alongside this page:\n\n${p.projects.filter((x) => x.playable).map((x) => `**${x.title}** — ${x.blurb}`).join("\n\n")}\n\nEach one has a **Play now** button on its card that opens it in a new tab.`,
         chips: ["Can I play the UNO game?", "What is Exam Slayer?", "What is Hand Cricket Franchise?"],
       })},
     { id: "play",
       keywords: ["play", "try the game", "can i play", "playable", "open the game", "demo"],
       reply: () => ({
-        text: `Yes — every game here runs right in this page, no download. Playable now: ${list(p.projects.filter((x) => x.playable).map((x) => `**${x.title}**`))}.\n\nHit the **Play now** button on a project card and it opens in an overlay you can close any time.`,
+        text: `Yes — every game here is playable, no download needed. Playable now: ${list(p.projects.filter((x) => x.playable).map((x) => `**${x.title}**`))}.\n\nHit the **Play now** button on a project card and it opens the local HTML file in a new tab.`,
         chips: ["What games has Krithick made?", "What is Bunny Runner?"],
       })},
 
@@ -814,7 +819,7 @@ const NOVA = (() => {
       weight: 1.4,
       keywords: (proj.aiKeywords || []).concat(proj.title.toLowerCase()),
       reply: () => ({
-        text: `**${proj.title}** _(${proj.status})_ — ${proj.description}\n\nBuilt with: ${proj.tags.join(", ")}.${proj.playable ? "\n\nIt's playable right here on the page — hit **Play now** on its card." : ""}`,
+        text: `**${proj.title}** _(${proj.status})_ — ${proj.description}\n\nBuilt with: ${proj.tags.join(", ")}.${proj.playable ? "\n\nIt's playable right now — hit **Play now** on its card to open the local HTML file in a new tab." : ""}`,
         chips: proj.playable
           ? ["Can I play Bunny Runner?", "What projects has he made?"]
           : ["What projects has he made?", "What technologies does he use?"],
