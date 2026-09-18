@@ -1,0 +1,1734 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SHIFTBOUND — Endless Two-World Runner</title>
+    <meta
+      name="description"
+      content="SHIFTBOUND is an endless two-world platform runner. Shift between parallel realities in mid-air to survive, collect shards and beat your record."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --stage: #120f1e;
+        --void: #0a0814;
+        --panel: rgba(30, 24, 52, 0.93);
+        --panel-soft: rgba(46, 37, 78, 0.6);
+        --panel-border: rgba(160, 120, 255, 0.32);
+        --overlay: rgba(12, 9, 24, 0.74);
+        --title: #f4f0ff;
+        --muted: rgba(198, 184, 235, 0.72);
+        --action: #7d4fe0;
+        --action-hover: #9366f5;
+        --action-soft: #c9b3ff;
+        --shard: #ffcd6b;
+        --world-a: #a98bff;
+        --world-b: #69f2ff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: radial-gradient(circle at 50% 30%, #1d1636, var(--stage) 70%);
+        color: var(--title);
+        font-family: "Orbitron", system-ui, sans-serif;
+        overflow: hidden;
+      }
+      #app {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        gap: 14px;
+      }
+      #stage {
+        position: relative;
+        width: min(1100px, 100%);
+        aspect-ratio: 960 / 540;
+        border-radius: 18px;
+        border: 1px solid var(--panel-border);
+        overflow: hidden;
+        box-shadow: 0 40px 120px -30px rgba(125, 79, 224, 0.55);
+        background: var(--void);
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      #stage.shake {
+        animation: shake 0.35s ease-out;
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        20% {
+          transform: translate(-6px, 4px);
+        }
+        45% {
+          transform: translate(5px, -3px);
+        }
+        70% {
+          transform: translate(-3px, 2px);
+        }
+      }
+      .layer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        user-select: none;
+      }
+      .screen {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: var(--overlay);
+        backdrop-filter: blur(10px);
+        animation: fadeIn 0.22s ease-out;
+      }
+      .screen.hidden {
+        display: none;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes pop {
+        from {
+          opacity: 0;
+          transform: scale(0.94);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      .card {
+        width: min(560px, 96%);
+        max-height: 100%;
+        overflow-y: auto;
+        border-radius: 18px;
+        border: 1px solid var(--panel-border);
+        background: var(--panel);
+        padding: 30px;
+        box-shadow: 0 30px 90px -20px rgba(0, 0, 0, 0.75);
+        animation: pop 0.22s ease-out;
+      }
+      .card.wide {
+        width: min(780px, 96%);
+      }
+      h1 {
+        margin: 0;
+        text-align: center;
+        font-size: clamp(30px, 5vw, 48px);
+        letter-spacing: 0.34em;
+        text-shadow: 0 0 28px var(--world-a);
+      }
+      h1 span {
+        color: var(--action-soft);
+      }
+      h2 {
+        margin: 0;
+        font-size: 20px;
+        letter-spacing: 0.34em;
+      }
+      .tagline {
+        margin-top: 12px;
+        text-align: center;
+        font-size: 10px;
+        letter-spacing: 0.36em;
+        color: var(--muted);
+      }
+      .btns {
+        margin: 28px auto 0;
+        width: 280px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      button {
+        font-family: inherit;
+        cursor: pointer;
+        width: 100%;
+        border-radius: 12px;
+        padding: 13px 18px;
+        font-size: 12px;
+        letter-spacing: 0.3em;
+        transition: all 0.18s ease;
+        border: 1px solid transparent;
+      }
+      button.solid {
+        background: var(--action);
+        color: #fff;
+        border: none;
+      }
+      button.solid:hover {
+        background: var(--action-hover);
+        box-shadow: 0 0 28px rgba(125, 79, 224, 0.6);
+        transform: translateY(-1px);
+      }
+      button.ghost {
+        background: transparent;
+        border: 1px solid var(--panel-border);
+        color: var(--title);
+      }
+      button.ghost:hover {
+        border-color: var(--action);
+        color: var(--action-soft);
+      }
+      button:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+      .rows {
+        margin-top: 24px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--panel-border);
+        padding-bottom: 8px;
+        margin-bottom: 10px;
+      }
+      .row .k {
+        color: var(--muted);
+      }
+      .grid {
+        margin-top: 22px;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+      .skin {
+        border: 1px solid var(--panel-border);
+        background: var(--panel-soft);
+        border-radius: 14px;
+        padding: 14px;
+        transition: all 0.2s ease;
+      }
+      .skin.equipped {
+        border-color: var(--action);
+        box-shadow: 0 0 26px rgba(125, 79, 224, 0.45);
+      }
+      .skin.equip-anim {
+        animation: pop 0.3s ease-out;
+      }
+      .skin-head {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+      }
+      .skin-name {
+        font-size: 12px;
+        letter-spacing: 0.26em;
+      }
+      .skin-sub {
+        margin-top: 5px;
+        font-size: 9px;
+        letter-spacing: 0.16em;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .bar {
+        margin-top: 8px;
+        height: 4px;
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.4);
+        overflow: hidden;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        background: var(--action);
+      }
+      .prev {
+        width: 62px;
+        height: 62px;
+        flex: 0 0 62px;
+        position: relative;
+        border-radius: 12px;
+      }
+      .prev.locked {
+        filter: grayscale(1);
+        opacity: 0.3;
+      }
+      .prev .body {
+        position: absolute;
+        left: 50%;
+        bottom: 12%;
+        transform: translateX(-50%);
+        width: 34%;
+        height: 50%;
+        border-radius: 5px;
+      }
+      .prev .visor {
+        position: absolute;
+        left: 15%;
+        top: 16%;
+        width: 70%;
+        height: 18%;
+        border-radius: 2px;
+      }
+      .prev .eye {
+        position: absolute;
+        right: 14%;
+        top: 22%;
+        width: 16%;
+        height: 10%;
+      }
+      .ms {
+        border: 1px solid var(--panel-border);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        color: var(--muted);
+      }
+      .ms.done {
+        color: var(--shard);
+        border-color: rgba(255, 205, 107, 0.5);
+      }
+      /* HUD */
+      #hud {
+        padding: 20px;
+        font-size: 11px;
+      }
+      .hud-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      .brand {
+        font-size: 17px;
+        letter-spacing: 0.42em;
+      }
+      .pill {
+        margin-top: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        border: 1px solid var(--world-a);
+        padding: 5px 13px;
+        font-size: 10px;
+        letter-spacing: 0.3em;
+        color: var(--world-a);
+        transition: all 0.15s ease;
+      }
+      .pill i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      .biome {
+        margin-top: 8px;
+        font-size: 9px;
+        letter-spacing: 0.34em;
+        color: var(--muted);
+      }
+      .hud-right {
+        text-align: right;
+      }
+      .lbl {
+        font-size: 9px;
+        letter-spacing: 0.36em;
+        color: var(--muted);
+      }
+      .val {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 24px;
+      }
+      .val.sm {
+        font-size: 17px;
+        color: var(--action-soft);
+      }
+      .mini {
+        margin-top: 8px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--muted);
+        display: flex;
+        gap: 16px;
+        justify-content: flex-end;
+      }
+      .mini .sh {
+        color: var(--shard);
+      }
+      #toasts {
+        position: absolute;
+        top: 96px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        align-items: center;
+      }
+      .toast {
+        border-radius: 999px;
+        border: 1px solid var(--panel-border);
+        background: var(--panel);
+        padding: 5px 16px;
+        font-size: 10px;
+        letter-spacing: 0.3em;
+        color: var(--action-soft);
+        animation: rise 0.25s ease-out;
+      }
+      .toast.gold {
+        color: var(--shard);
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      #milestone {
+        position: absolute;
+        top: 34%;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        border: 1px solid var(--panel-border);
+        background: var(--panel);
+        border-radius: 14px;
+        padding: 16px 26px;
+        animation: pop 0.25s ease-out;
+      }
+      #milestone .lbl {
+        letter-spacing: 0.4em;
+      }
+      #milestone .txt {
+        margin-top: 6px;
+        font-size: 13px;
+        letter-spacing: 0.28em;
+        color: var(--shard);
+      }
+      .keys {
+        position: absolute;
+        bottom: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 9px;
+        letter-spacing: 0.28em;
+        color: var(--muted);
+      }
+      .foot {
+        font-size: 9px;
+        letter-spacing: 0.3em;
+        color: var(--muted);
+        text-align: center;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .badge {
+        text-align: center;
+        font-size: 9px;
+        letter-spacing: 0.4em;
+        color: var(--shard);
+        margin-top: 8px;
+      }
+      .unlockbox {
+        margin: 18px auto 0;
+        width: 300px;
+        border: 1px solid rgba(125, 79, 224, 0.6);
+        border-radius: 14px;
+        background: var(--panel-soft);
+        padding: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <main id="stage">
+        <canvas id="cv" width="960" height="540"></canvas>
+
+        <!-- HUD -->
+        <div class="layer hidden" id="hud">
+          <div class="hud-top">
+            <div>
+              <div class="brand">SHIFTBOUND</div>
+              <div class="pill" id="pill"><i></i><span id="worldTxt">WORLD A</span></div>
+              <div class="biome" id="biome">THE CROSSING</div>
+            </div>
+            <div class="hud-right">
+              <div class="lbl">DISTANCE</div>
+              <div class="val" id="dist">0 M</div>
+              <div class="lbl" style="margin-top: 8px">SCORE</div>
+              <div class="val sm" id="score">0</div>
+              <div class="mini">
+                <span class="sh" id="runShards">◆ 0</span>
+                <span id="bestMini">BEST 0 M</span>
+              </div>
+            </div>
+          </div>
+          <div id="toasts"></div>
+          <div id="milestone" class="hidden">
+            <div class="lbl">MILESTONE</div>
+            <div class="txt" id="milestoneTxt"></div>
+          </div>
+          <div class="keys">SPACE JUMP · E / SHIFT SWITCH WORLD · R RESTART · ESC PAUSE</div>
+        </div>
+
+        <!-- MAIN MENU -->
+        <section class="screen" id="scr-menu">
+          <div class="card">
+            <h1>SHIFT<span>BOUND</span></h1>
+            <p class="tagline">TWO WORLDS. ONE PATH FORWARD.</p>
+            <div class="btns">
+              <button class="solid" data-go="play">PLAY</button>
+              <button class="ghost" data-go="skins">SKINS</button>
+              <button class="ghost" data-go="best">BEST RUN</button>
+              <button class="ghost" data-go="settings">SETTINGS</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SKINS -->
+        <section class="screen hidden" id="scr-skins">
+          <div class="card wide">
+            <div style="display: flex; justify-content: space-between; align-items: baseline">
+              <h2>SKINS</h2>
+              <span
+                id="skinCount"
+                style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted)"
+              ></span>
+            </div>
+            <div class="grid" id="skinGrid"></div>
+            <div class="btns"><button class="ghost" data-go="menu">BACK</button></div>
+          </div>
+        </section>
+
+        <!-- BEST RUN -->
+        <section class="screen hidden" id="scr-best">
+          <div class="card">
+            <h2>BEST RUN</h2>
+            <div class="rows" id="bestRows"></div>
+            <h2 style="margin-top: 26px; font-size: 12px; color: var(--muted)">MILESTONES</h2>
+            <div class="grid" id="msGrid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr))"></div>
+            <div class="btns"><button class="ghost" data-go="menu">BACK</button></div>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section class="screen hidden" id="scr-settings">
+          <div class="card">
+            <h2>SETTINGS</h2>
+            <div class="btns" style="width: 100%; margin-top: 22px">
+              <button class="ghost" data-toggle="sound">SOUND <b id="tSound">ON</b></button>
+              <button class="ghost" data-toggle="particles">PARTICLES <b id="tParticles">ON</b></button>
+              <button class="ghost" data-toggle="ghost">OTHER-WORLD PREVIEW <b id="tGhost">ON</b></button>
+              <button class="ghost" data-toggle="shake">SCREEN SHAKE <b id="tShake">ON</b></button>
+              <button class="ghost" data-reset>RESET PROGRESS</button>
+              <button class="ghost" data-go="menu">BACK</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- PAUSE -->
+        <section class="screen hidden" id="scr-pause">
+          <div class="card">
+            <h2 style="text-align: center">PAUSED</h2>
+            <div class="btns">
+              <button class="solid" data-go="resume">RESUME</button>
+              <button class="ghost" data-go="play">RESTART RUN</button>
+              <button class="ghost" data-go="menu">MAIN MENU</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- GAME OVER -->
+        <section class="screen hidden" id="scr-over">
+          <div class="card">
+            <h2 style="text-align: center; font-size: 26px">RUN OVER</h2>
+            <div class="badge hidden" id="recordBadge">NEW RECORD</div>
+            <div class="rows" id="overRows" style="width: 300px; margin-left: auto; margin-right: auto"></div>
+            <div class="unlockbox hidden" id="unlockBox"></div>
+            <div id="overMs" style="width: 300px; margin: 12px auto 0; text-align: center"></div>
+            <div class="btns">
+              <button class="solid" data-go="play">RETRY</button>
+              <button class="ghost" data-go="skins">SKINS</button>
+              <button class="ghost" data-go="menu">MAIN MENU</button>
+            </div>
+          </div>
+        </section>
+      </main>
+      <p class="foot" id="foot">AN ENDLESS TWO-WORLD RUNNER</p>
+    </div>
+
+    <script>
+      "use strict";
+      /* =======================================================================
+         SHIFTBOUND — standalone build. No dependencies, no build step.
+         ===================================================================== */
+
+      /* ------------------------------- audio ------------------------------ */
+      let actx = null;
+      let audioOn = true;
+      function ctx() {
+        if (!audioOn) return null;
+        try {
+          if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+          if (actx.state === "suspended") actx.resume();
+          return actx;
+        } catch (e) {
+          return null;
+        }
+      }
+      function tone(o) {
+        const c = ctx();
+        if (!c) return;
+        try {
+          const t0 = c.currentTime + (o.delay || 0);
+          const dur = o.dur || 0.12;
+          const osc = c.createOscillator();
+          const g = c.createGain();
+          osc.type = o.type || "sine";
+          osc.frequency.setValueAtTime(o.freq, t0);
+          if (o.to) osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.to), t0 + dur);
+          g.gain.setValueAtTime(0.0001, t0);
+          g.gain.exponentialRampToValueAtTime(o.gain || 0.07, t0 + 0.012);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+          osc.connect(g).connect(c.destination);
+          osc.start(t0);
+          osc.stop(t0 + dur + 0.05);
+        } catch (e) {}
+      }
+      const sfx = {
+        shift() {
+          tone({ freq: 320, to: 880, dur: 0.15, type: "triangle", gain: 0.07 });
+          tone({ freq: 880, to: 420, dur: 0.2, type: "sine", gain: 0.045, delay: 0.03 });
+        },
+        jump() {
+          tone({ freq: 300, to: 620, dur: 0.1, type: "square", gain: 0.035 });
+        },
+        shard() {
+          tone({ freq: 900, dur: 0.08, type: "triangle", gain: 0.05 });
+          tone({ freq: 1350, dur: 0.12, type: "triangle", gain: 0.04, delay: 0.06 });
+        },
+        death() {
+          tone({ freq: 260, to: 60, dur: 0.42, type: "sawtooth", gain: 0.07 });
+        },
+        combo() {
+          tone({ freq: 660, to: 1180, dur: 0.14, type: "triangle", gain: 0.045 });
+        },
+        unlock() {
+          [440, 660, 880, 1320].forEach((f, i) =>
+            tone({ freq: f, dur: 0.3, type: "sine", gain: 0.05, delay: i * 0.09 }),
+          );
+        },
+        ui() {
+          tone({ freq: 620, dur: 0.06, type: "triangle", gain: 0.035 });
+        },
+      };
+
+      /* -------------------------------- skins ----------------------------- */
+      const SKINS = [
+        { id: "original", name: "ORIGINAL", tagline: "The first traveller.", body: "#f4f1ff", trim: "#6d4bd8", glow: "#b79bff", effect: "none", req: { kind: "none", value: 0, label: "UNLOCKED BY DEFAULT" } },
+        { id: "neon", name: "NEON SHIFT", tagline: "Charged with raw shift energy.", body: "#0f2230", trim: "#22ffd0", glow: "#4dffe0", effect: "trail", req: { kind: "distance", value: 1000, label: "RUN 1,000 M IN ONE RUN" } },
+        { id: "void", name: "VOID", tagline: "Something that never left the dark.", body: "#141322", trim: "#5b4b93", glow: "#8d6bff", effect: "void", req: { kind: "shards", value: 100, label: "COLLECT 100 SHARDS TOTAL" } },
+        { id: "glitch", name: "GLITCH", tagline: "Two worlds rendered at once.", body: "#e8f6ff", trim: "#ff3d8b", glow: "#49f7ff", effect: "glitch", req: { kind: "shifts", value: 500, label: "PERFORM 500 WORLD SHIFTS" } },
+        { id: "chrono", name: "CHRONO", tagline: "Runs a half-second ahead of you.", body: "#f7e9c9", trim: "#c98b2b", glow: "#ffd97a", effect: "chrono", req: { kind: "score", value: 8000, label: "SCORE 8,000 IN ONE RUN" } },
+        { id: "astral", name: "ASTRAL", tagline: "Made of the space between worlds.", body: "#1b1745", trim: "#9fd0ff", glow: "#cfe4ff", effect: "sparkle", req: { kind: "distance", value: 4000, label: "RUN 4,000 M IN ONE RUN" } },
+        { id: "prism", name: "PRISM", tagline: "Refracts every reality at once.", body: "#ffffff", trim: "#ff7ad9", glow: "#7affd1", effect: "prism", req: { kind: "shards", value: 400, label: "COLLECT 400 SHARDS TOTAL" } },
+        { id: "paradox", name: "PARADOX", tagline: "It should not be able to exist here.", body: "#0b0b12", trim: "#ff4d6d", glow: "#ffffff", effect: "glitch", req: { kind: "distance", value: 10000, label: "RUN 10,000 M IN ONE RUN" } },
+      ];
+      const SKIN_MAP = Object.fromEntries(SKINS.map((s) => [s.id, s]));
+      function statValue(kind, s) {
+        return kind === "distance" ? s.bestDistance : kind === "score" ? s.bestScore : kind === "shards" ? s.totalShards : kind === "shifts" ? s.totalShifts : 1;
+      }
+      const meets = (skin, s) => skin.req.kind === "none" || statValue(skin.req.kind, s) >= skin.req.value;
+      const progress = (skin, s) =>
+        skin.req.kind === "none" ? 1 : Math.max(0, Math.min(1, statValue(skin.req.kind, s) / skin.req.value));
+
+      /* --------------------------------- save ----------------------------- */
+      const KEY = "shiftbound.save.v2";
+      const DEFAULT_SAVE = {
+        bestDistance: 0, bestScore: 0, totalShards: 0, totalDistance: 0, totalShifts: 0,
+        longestTime: 0, runs: 0, unlocked: ["original"], equipped: "original", milestones: [],
+      };
+      const MILESTONES = [
+        { id: "d1000", label: "RUN 1,000 METERS", check: (s) => s.bestDistance >= 1000 },
+        { id: "d2500", label: "RUN 2,500 METERS", check: (s) => s.bestDistance >= 2500 },
+        { id: "d5000", label: "RUN 5,000 METERS", check: (s) => s.bestDistance >= 5000 },
+        { id: "s100", label: "COLLECT 100 SHARDS", check: (s) => s.totalShards >= 100 },
+        { id: "s400", label: "COLLECT 400 SHARDS", check: (s) => s.totalShards >= 400 },
+        { id: "sh500", label: "PERFORM 500 WORLD SHIFTS", check: (s) => s.totalShifts >= 500 },
+        { id: "t300", label: "SURVIVE 5 MINUTES", check: (s) => s.longestTime >= 300 },
+        { id: "sc10000", label: "SCORE 10,000 POINTS", check: (s) => s.bestScore >= 10000 },
+      ];
+      function loadSave() {
+        try {
+          const raw = localStorage.getItem(KEY);
+          if (!raw) return Object.assign({}, DEFAULT_SAVE);
+          return Object.assign({}, DEFAULT_SAVE, JSON.parse(raw));
+        } catch (e) {
+          return Object.assign({}, DEFAULT_SAVE);
+        }
+      }
+      function persist() {
+        try {
+          localStorage.setItem(KEY, JSON.stringify(save));
+        } catch (e) {}
+      }
+      let save = loadSave();
+
+      /* ------------------------------- chunks ----------------------------- */
+      const GROUND_Y = 430;
+      const KILL_Y = 640;
+      const piece = () => ({ platforms: [], spikes: [], hazards: [], movers: [], fallers: [] });
+      const ground = (p, x, w) => p.platforms.push({ x: x, y: GROUND_Y, w: w, h: 240 });
+      const ledge = (p, x, y, w) => p.platforms.push({ x: x, y: y, w: w, h: 18 });
+      const spikes = (p, x, w) => p.spikes.push({ x: x, y: GROUND_Y - 20, w: w, h: 20 });
+      const faller = (p, x, y, w) => p.fallers.push({ x: x, y: y, w: w, h: 16, state: 0, t: 0, vy: 0 });
+      const shard = (c, x, y) => c.shards.push({ x: x, y: y, got: false });
+
+      const PATTERNS = [
+        {
+          id: "cruise", minDiff: 0,
+          build: (c, jd) => {
+            const w = Math.max(380, jd * 1.4);
+            c.w = w; ground(c.a, c.x, w); ground(c.b, c.x, w);
+            shard(c, c.x + w * 0.5, GROUND_Y - 70);
+          },
+        },
+        {
+          id: "pit-a", minDiff: 0,
+          build: (c, jd) => {
+            const gap = jd * 1.5, w = 180 + gap + 200;
+            c.w = w; ground(c.a, c.x, 180); ground(c.a, c.x + 180 + gap, 200); ground(c.b, c.x, w);
+            shard(c, c.x + 180 + gap * 0.5, GROUND_Y - 110);
+          },
+        },
+        {
+          id: "pit-b", minDiff: 0,
+          build: (c, jd) => {
+            const gap = jd * 1.5, w = 180 + gap + 200;
+            c.w = w; ground(c.b, c.x, 180); ground(c.b, c.x + 180 + gap, 200); ground(c.a, c.x, w);
+            shard(c, c.x + 180 + gap * 0.5, GROUND_Y - 110);
+          },
+        },
+        {
+          id: "spike-swap", minDiff: 0.08,
+          build: (c, jd) => {
+            const w = jd * 2.9 + 220;
+            c.w = w; ground(c.a, c.x, w); ground(c.b, c.x, w);
+            spikes(c.a, c.x + 160, 60);
+            spikes(c.b, c.x + 160 + jd * 1.5, 60);
+            shard(c, c.x + 160 + jd * 0.75, GROUND_Y - 90);
+          },
+        },
+        {
+          id: "high-road", minDiff: 0.15,
+          build: (c, jd, jh, diff) => {
+            const w = jd * 3.1 + 240;
+            c.w = w; ground(c.a, c.x, w);
+            spikes(c.a, c.x + 200, 55);
+            if (diff > 0.45) spikes(c.a, c.x + 200 + jd * 1.6, 55);
+            ground(c.b, c.x, 160);
+            const y = GROUND_Y - Math.min(110, jh * 0.7);
+            ledge(c.b, c.x + 160 + jd * 0.6, y, 150);
+            ledge(c.b, c.x + 160 + jd * 1.5, y, 150);
+            ground(c.b, c.x + w - 200, 200);
+            shard(c, c.x + 160 + jd * 0.6 + 75, y - 60);
+          },
+        },
+        {
+          id: "alternate", minDiff: 0.3,
+          build: (c, jd) => {
+            const step = jd * 0.78, lw = Math.max(110, jd * 0.35), n = 5;
+            const w = 160 + step * n + 220;
+            c.w = w; ground(c.a, c.x, 160); ground(c.b, c.x, 160);
+            const y = GROUND_Y - 40;
+            for (let i = 0; i < n; i++) {
+              const target = i % 2 === 0 ? c.a : c.b;
+              ledge(target, c.x + 160 + step * i, y, lw);
+              if (i === 2) shard(c, c.x + 160 + step * i + lw / 2, y - 70);
+            }
+            ground(c.a, c.x + w - 220, 220); ground(c.b, c.x + w - 220, 220);
+          },
+        },
+        {
+          id: "mover", minDiff: 0.32,
+          build: (c, jd, jh) => {
+            const gap = jd * 2.1, w = 180 + gap + 200;
+            c.w = w;
+            ground(c.a, c.x, 180); ground(c.a, c.x + 180 + gap, 200);
+            ground(c.b, c.x, 180); ground(c.b, c.x + 180 + gap, 200);
+            const top = GROUND_Y - Math.min(100, jh * 0.65);
+            c.a.movers.push({ x: c.x + 180 + gap * 0.5 - 70, y: top, w: 140, h: 18, from: top, to: GROUND_Y - 10, axis: "y", speed: 1.1, phase: 0 });
+            ledge(c.b, c.x + 180 + gap * 0.3 - 60, GROUND_Y - 30, 120);
+            ledge(c.b, c.x + 180 + gap * 0.72 - 60, top, 120);
+            shard(c, c.x + 180 + gap * 0.5, top - 60);
+          },
+        },
+        {
+          id: "fallers", minDiff: 0.42,
+          build: (c, jd) => {
+            const step = jd * 0.72, w = 170 + step * 3 + 240;
+            c.w = w;
+            ground(c.a, c.x, 170); ground(c.a, c.x + w - 240, 240);
+            for (let i = 0; i < 3; i++) faller(c.a, c.x + 170 + step * i, GROUND_Y - 30, 120);
+            ground(c.b, c.x, w);
+            c.b.hazards.push({ x: c.x + w * 0.5, y: GROUND_Y - 150, w: 26, h: 26, from: GROUND_Y - 170, to: GROUND_Y - 34, axis: "y", speed: 2.1, phase: 0 });
+            shard(c, c.x + 170 + step, GROUND_Y - 100);
+          },
+        },
+        {
+          id: "narrow", minDiff: 0.5,
+          build: (c, jd) => {
+            const step = jd * 0.74, lw = Math.max(80, jd * 0.24), n = 4;
+            const w = 160 + step * n + 220;
+            c.w = w; ground(c.a, c.x, 160); ground(c.b, c.x, 160);
+            for (let i = 0; i < n; i++) {
+              ledge(c.a, c.x + 160 + step * i, GROUND_Y - (i % 2 === 0 ? 30 : 90), lw);
+              ledge(c.b, c.x + 160 + step * i, GROUND_Y - (i % 2 === 0 ? 90 : 30), lw);
+            }
+            ground(c.a, c.x + w - 220, 220); ground(c.b, c.x + w - 220, 220);
+            shard(c, c.x + 160 + step * 1.5, GROUND_Y - 140);
+          },
+        },
+        {
+          id: "hazard-swap", minDiff: 0.55,
+          build: (c, jd) => {
+            const w = jd * 2.8 + 220;
+            c.w = w; ground(c.a, c.x, w); ground(c.b, c.x, w);
+            c.a.hazards.push({ x: c.x + w * 0.35, y: GROUND_Y - 40, w: 26, h: 26, from: c.x + w * 0.25, to: c.x + w * 0.55, axis: "x", speed: 1.6, phase: 0 });
+            spikes(c.b, c.x + w * 0.34, 80);
+            c.b.hazards.push({ x: c.x + w * 0.7, y: GROUND_Y - 130, w: 26, h: 26, from: GROUND_Y - 150, to: GROUND_Y - 40, axis: "y", speed: 2.4, phase: 1.2 });
+            spikes(c.a, c.x + w * 0.7, 70);
+            shard(c, c.x + w * 0.52, GROUND_Y - 80);
+          },
+        },
+        {
+          id: "gauntlet", minDiff: 0.72,
+          build: (c, jd, jh) => {
+            const step = jd * 0.8, lw = Math.max(95, jd * 0.3), w = 150 + step * 4 + 240;
+            c.w = w; ground(c.a, c.x, 150); ground(c.b, c.x, 150);
+            const hi = GROUND_Y - Math.min(105, jh * 0.68);
+            for (let i = 0; i < 4; i++) {
+              const target = i % 2 === 0 ? c.a : c.b;
+              const other = i % 2 === 0 ? c.b : c.a;
+              ledge(target, c.x + 150 + step * i, i % 4 === 3 ? hi : GROUND_Y - 45, lw);
+              if (i === 1)
+                other.hazards.push({ x: c.x + 150 + step * i, y: GROUND_Y - 120, w: 24, h: 24, from: GROUND_Y - 150, to: GROUND_Y - 60, axis: "y", speed: 2.6, phase: 0.6 });
+              if (i === 2) shard(c, c.x + 150 + step * i + lw / 2, GROUND_Y - 120);
+            }
+            ground(c.a, c.x + w - 240, 240); ground(c.b, c.x + w - 240, 240);
+          },
+        },
+      ];
+
+      const BIOMES = [
+        { name: "THE CROSSING", from: 0, idx: 0 },
+        { name: "FRACTURE", from: 1000, idx: 1 },
+        { name: "VOIDLINE", from: 2500, idx: 2 },
+        { name: "OVERLOAD", from: 5000, idx: 3 },
+      ];
+      function biomeFor(d) {
+        let b = BIOMES[0];
+        for (const x of BIOMES) if (d >= x.from) b = x;
+        return b;
+      }
+
+      class Generator {
+        constructor() { this.reset(); }
+        reset() {
+          this.x = 0; this.chunks = []; this.lastId = ""; this.sinceCruise = 0;
+          const c = { x: 0, w: 1300, a: piece(), b: piece(), shards: [], label: "start" };
+          ground(c.a, 0, 1300); ground(c.b, 0, 1300);
+          shard(c, 700, GROUND_Y - 70); shard(c, 940, GROUND_Y - 70);
+          this.chunks.push(c); this.x = 1300;
+        }
+        ensure(untilX, jd, jh, diff) {
+          let guard = 0;
+          while (this.x < untilX && guard++ < 24) {
+            const pool = PATTERNS.filter(
+              (p) => diff >= p.minDiff && p.id !== this.lastId && (diff < 0.25 || p.id !== "cruise"),
+            );
+            const force = this.sinceCruise >= (diff > 0.6 ? 5 : 4);
+            const pat = force ? PATTERNS[0] : pool[Math.floor(Math.random() * pool.length)] || PATTERNS[0];
+            const c = { x: this.x, w: 0, a: piece(), b: piece(), shards: [], label: pat.id };
+            pat.build(c, jd, jh, diff);
+            this.chunks.push(c);
+            this.x += c.w;
+            this.lastId = pat.id;
+            this.sinceCruise = pat.id === "cruise" ? 0 : this.sinceCruise + 1;
+          }
+        }
+        prune(minX) {
+          while (this.chunks.length > 3 && this.chunks[0].x + this.chunks[0].w < minX) this.chunks.shift();
+        }
+      }
+
+      /* ------------------------------- palettes --------------------------- */
+      const PALETTES = {
+        a: [
+          { sky0: "#120a2e", sky1: "#2a1a5e", far: "#241653", mid: "#311f6d", near: "#3c2688", plat: "#6d4bd8", platTop: "#a98bff", glow: "#b79bff", accent: "#c9b3ff", particle: "rgba(183,155,255," },
+          { sky0: "#170a33", sky1: "#3d1a63", far: "#301457", mid: "#421c73", near: "#52248f", plat: "#8a45d6", platTop: "#c48bff", glow: "#cf9bff", accent: "#e3c3ff", particle: "rgba(207,155,255," },
+          { sky0: "#0d0620", sky1: "#241046", far: "#1c0c3c", mid: "#2a1155", near: "#371769", plat: "#5b34c0", platTop: "#9d78ff", glow: "#a37bff", accent: "#c0a6ff", particle: "rgba(163,123,255," },
+          { sky0: "#200630", sky1: "#5a1250", far: "#440d40", mid: "#5c114f", near: "#761662", plat: "#b03ad0", platTop: "#ff9bf0", glow: "#ff8ae8", accent: "#ffc4f6", particle: "rgba(255,138,232," },
+        ],
+        b: [
+          { sky0: "#02171c", sky1: "#063a44", far: "#052b33", mid: "#07404b", near: "#095563", plat: "#12a3b8", platTop: "#69f2ff", glow: "#69f2ff", accent: "#9bfaff", particle: "rgba(105,242,255," },
+          { sky0: "#031a19", sky1: "#07463c", far: "#053430", mid: "#084b42", near: "#0a6355", plat: "#11b58e", platTop: "#5cffcb", glow: "#5cffcb", accent: "#a6ffe6", particle: "rgba(92,255,203," },
+          { sky0: "#010e16", sky1: "#04252f", far: "#031b24", mid: "#052a35", near: "#063845", plat: "#0e7f9c", platTop: "#49d7f5", glow: "#49d7f5", accent: "#8ceaff", particle: "rgba(73,215,245," },
+          { sky0: "#011016", sky1: "#0a3550", far: "#062637", mid: "#0a3a55", near: "#0d4d70", plat: "#1585d8", platTop: "#67d0ff", glow: "#7fe3ff", accent: "#c2f0ff", particle: "rgba(127,227,255," },
+        ],
+      };
+
+      /* -------------------------------- engine ---------------------------- */
+      const VIEW_W = 960, VIEW_H = 540, ANCHOR = 300;
+      const GRAVITY = 2300, MAX_FALL = 1250, JUMP_V = 780, COYOTE = 0.1, BUFFER = 0.14, PX_PER_M = 20;
+
+      const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+      const nearBy = (a, b, m) => overlap({ x: a.x - m, y: a.y - m, w: a.w + m * 2, h: a.h + m * 2 }, b);
+
+      class Game {
+        constructor(canvas, cb) {
+          this.canvas = canvas;
+          this.ctx = canvas.getContext("2d");
+          this.cb = cb;
+          this.gen = new Generator();
+          this.keys = {};
+          this.bgDots = [];
+          for (let i = 0; i < 120; i++)
+            this.bgDots.push({ x: Math.random() * (VIEW_W + 200), y: Math.random() * 520, r: Math.random() * 1.8 + 0.4, s: Math.random() * 0.5 + 0.15 });
+          this.opts = { particles: true, ghost: true, shake: true };
+          this.skin = SKIN_MAP[save.equipped] || SKIN_MAP.original;
+          this.best = save.bestDistance;
+          this.raf = 0;
+          this.running = false;
+          this.reset();
+        }
+        reset() {
+          this.gen.reset();
+          this.world = "a";
+          this.px = 200; this.py = GROUND_Y - 36; this.pw = 26; this.ph = 36;
+          this.vy = 0; this.onGround = true; this.riding = null;
+          this.coyote = 0; this.buffer = 0; this.jumpHeld = false;
+          this.time = 0; this.animT = 0; this.distance = 0; this.score = 0;
+          this.shards = 0; this.shifts = 0; this.chain = 0; this.chainT = 0;
+          this.airShiftT = -1; this.speed = 300; this.over = false;
+          this.particles = []; this.trail = []; this.nearCooldown = 0;
+          this.camX = this.px - ANCHOR; this.camLead = 0;
+          this.flash = 0; this.shiftPulse = 0; this.glitch = 0; this.shakeT = 0;
+          this.skin = SKIN_MAP[save.equipped] || SKIN_MAP.original;
+          this.best = save.bestDistance;
+          this.gen.ensure(this.px + 2400, this.jumpDist(), this.jumpHeight(), 0);
+          this.emitHud();
+        }
+        jumpDist() { return this.speed * 0.62; }
+        jumpHeight() { return (JUMP_V * JUMP_V) / (2 * GRAVITY); }
+        diff() { return Math.max(0, Math.min(1, this.distance / 2500)); }
+        start() {
+          if (this.running) return;
+          this.running = true;
+          this.last = performance.now();
+          const loop = (t) => {
+            if (!this.running) return;
+            const dt = Math.min(0.033, (t - this.last) / 1000);
+            this.last = t;
+            this.update(dt);
+            this.render();
+            this.raf = requestAnimationFrame(loop);
+          };
+          this.raf = requestAnimationFrame(loop);
+        }
+        stop() { this.running = false; cancelAnimationFrame(this.raf); }
+        key(code, down) {
+          const was = this.keys[code];
+          this.keys[code] = down;
+          if (down && !was) {
+            if (code === "Space" || code === "ArrowUp" || code === "KeyW") this.buffer = BUFFER;
+            if (code === "KeyE" || code === "ShiftLeft" || code === "ShiftRight" || code === "ArrowDown" || code === "KeyS") this.shift();
+          }
+          if (!down && (code === "Space" || code === "ArrowUp" || code === "KeyW")) this.jumpHeld = false;
+        }
+        shift() {
+          if (this.over) return;
+          this.world = this.world === "a" ? "b" : "a";
+          this.shifts++;
+          this.flash = 1; this.shiftPulse = 1; this.glitch = 1;
+          sfx.shift();
+          this.burst(this.px + this.pw / 2, this.py + this.ph / 2, 22, this.world);
+          if (!this.onGround) this.airShiftT = 0;
+          this.chain = this.chainT > 0 ? this.chain + 1 : 1;
+          this.chainT = 1.3;
+          if (this.chain >= 3) {
+            this.score += this.chain * 5;
+            sfx.combo();
+            this.cb.onEvent("SHIFT CHAIN x" + this.chain, "chain");
+          }
+          this.unstick();
+          this.riding = null;
+        }
+        unstick() {
+          for (let i = 0; i < 10; i++) {
+            const body = { x: this.px, y: this.py, w: this.pw, h: this.ph };
+            const hit = this.solids().find((p) => overlap(body, p));
+            if (!hit) return;
+            const up = body.y + body.h - hit.y;
+            const down = hit.y + hit.h - body.y;
+            if (up <= down) { this.py -= up; this.vy = Math.min(this.vy, 0); this.onGround = true; }
+            else { this.py += down; this.vy = Math.max(this.vy, 40); }
+          }
+        }
+        solids() {
+          const out = [];
+          for (const c of this.gen.chunks) {
+            if (c.x + c.w < this.camX - 200 || c.x > this.camX + VIEW_W + 200) continue;
+            const p = this.world === "a" ? c.a : c.b;
+            for (const r of p.platforms) out.push(r);
+            for (const r of p.movers) out.push(r);
+            for (const f of p.fallers) if (f.state !== 2) out.push(f);
+          }
+          return out;
+        }
+        burst(x, y, n, hue) {
+          if (!this.opts.particles) return;
+          for (let i = 0; i < n; i++) {
+            const a = Math.random() * Math.PI * 2, s = 60 + Math.random() * 240;
+            this.particles.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.4 + Math.random() * 0.4, max: 0.85, size: 1.4 + Math.random() * 3, hue: hue, grav: 240 });
+          }
+        }
+        update(dt) {
+          this.animT += dt;
+          this.flash = Math.max(0, this.flash - dt * 5);
+          this.shiftPulse = Math.max(0, this.shiftPulse - dt * 2.4);
+          this.glitch = Math.max(0, this.glitch - dt * 3.2);
+          this.shakeT = Math.max(0, this.shakeT - dt * 3);
+          this.chainT = Math.max(0, this.chainT - dt);
+          if (this.chainT === 0) this.chain = 0;
+          this.nearCooldown = Math.max(0, this.nearCooldown - dt);
+          if (this.airShiftT >= 0) this.airShiftT += dt;
+          if (this.over) { this.stepParticles(dt); return; }
+
+          this.time += dt;
+          this.speed = 300 + Math.min(430, this.distance * 0.17);
+          const dx = this.speed * dt;
+          this.px += dx;
+          this.distance += dx / PX_PER_M;
+          this.score += dx / PX_PER_M;
+
+          this.coyote = this.onGround ? COYOTE : Math.max(0, this.coyote - dt);
+          this.buffer = Math.max(0, this.buffer - dt);
+          const jumpKey = this.keys["Space"] || this.keys["ArrowUp"] || this.keys["KeyW"];
+          if (this.buffer > 0 && this.coyote > 0) {
+            this.vy = -JUMP_V; this.onGround = false; this.riding = null;
+            this.coyote = 0; this.buffer = 0; this.jumpHeld = true;
+            sfx.jump();
+            this.burst(this.px + this.pw / 2, this.py + this.ph, 5, this.world);
+          }
+          if (!jumpKey && this.vy < -190 && this.jumpHeld) { this.vy = -190; this.jumpHeld = false; }
+
+          this.gen.ensure(this.px + 2400, this.jumpDist(), this.jumpHeight(), this.diff());
+          this.gen.prune(this.camX - 600);
+          this.stepWorldObjects(dt);
+
+          const prevBottom = this.py + this.ph;
+          this.vy = Math.min(MAX_FALL, this.vy + GRAVITY * dt);
+          this.py += this.vy * dt;
+          const wasOnGround = this.onGround;
+          this.onGround = false;
+          this.riding = null;
+
+          const bx = this.px + 2, bw = this.pw - 4;
+          for (const p of this.solids()) {
+            if (bx + bw <= p.x || bx >= p.x + p.w) continue;
+            const bottom = this.py + this.ph;
+            if (this.vy >= 0 && prevBottom <= p.y + 4 && bottom >= p.y) {
+              this.py = p.y - this.ph; this.vy = 0; this.onGround = true;
+              if (typeof p.axis === "string") this.riding = p;
+              if (p.state === 0 && p.h === 16) { p.state = 1; p.t = 0; }
+              if (!wasOnGround) this.onLand();
+            }
+          }
+
+          const body = { x: this.px + 3, y: this.py + 3, w: this.pw - 6, h: this.ph - 4 };
+          if (this.py > KILL_Y) return this.die();
+          for (const p of this.solids()) {
+            if (body.x + body.w > p.x && body.x < p.x + p.w && body.y + body.h > p.y + 8 && body.y < p.y + p.h) return this.die();
+          }
+
+          let grazed = false;
+          for (const c of this.gen.chunks) {
+            const p = this.world === "a" ? c.a : c.b;
+            for (const raw of p.spikes) {
+              const s = { x: raw.x + 8, y: raw.y + 6, w: raw.w - 16, h: raw.h - 6 };
+              if (overlap(body, s)) return this.die();
+              if (nearBy(body, s, 22)) grazed = true;
+            }
+            for (const h of p.hazards) {
+              if (overlap(body, h)) return this.die();
+              if (nearBy(body, h, 26)) grazed = true;
+            }
+            for (const sh of c.shards) {
+              if (sh.got) continue;
+              if (overlap(body, { x: sh.x - 13, y: sh.y - 13, w: 26, h: 26 })) {
+                sh.got = true; this.shards++; this.score += 25;
+                sfx.shard();
+                this.burst(sh.x, sh.y, 12, "gold");
+                this.cb.onEvent("+1 SHARD", "shard");
+              }
+            }
+          }
+          if (grazed && this.nearCooldown === 0) {
+            this.nearCooldown = 1.4; this.score += 15;
+            this.cb.onEvent("NEAR MISS!", "near");
+          }
+
+          // Smooth camera with slight speed-based look-ahead
+          const lead = Math.min(90, (this.speed - 300) * 0.2);
+          this.camLead += (lead - this.camLead) * Math.min(1, dt * 3);
+          this.camX = this.px - ANCHOR + this.camLead;
+
+          if (this.opts.particles) {
+            this.trail.push({ x: this.px + this.pw / 2, y: this.py + this.ph / 2, life: 0.32 });
+            for (const t of this.trail) t.life -= dt;
+            this.trail = this.trail.filter((t) => t.life > 0);
+          }
+          this.stepParticles(dt);
+          this.emitHud();
+        }
+        onLand() {
+          if (this.airShiftT >= 0 && this.airShiftT < 0.4) {
+            this.score += 40;
+            sfx.combo();
+            this.cb.onEvent("PERFECT SHIFT!", "shift");
+            this.burst(this.px + this.pw / 2, this.py + this.ph, 14, this.world);
+          }
+          this.airShiftT = -1;
+        }
+        stepWorldObjects(dt) {
+          for (const c of this.gen.chunks) {
+            for (const p of [c.a, c.b]) {
+              for (const list of [p.hazards, p.movers]) {
+                for (const m of list) {
+                  const span = m.to - m.from;
+                  const k = (Math.sin(this.animT * m.speed + m.phase) + 1) / 2;
+                  const val = m.from + span * k;
+                  if (m.axis === "x") m.x = val;
+                  else {
+                    const dy = val - m.y;
+                    m.y = val;
+                    if (this.riding === m) this.py += dy;
+                  }
+                }
+              }
+              for (const f of p.fallers) {
+                if (f.state === 1) { f.t += dt; if (f.t > 0.32) f.state = 2; }
+                else if (f.state === 2) { f.vy += 1800 * dt; f.y += f.vy * dt; }
+              }
+            }
+          }
+        }
+        die() {
+          if (this.over) return;
+          this.over = true;
+          this.shakeT = 1;
+          sfx.death();
+          this.burst(this.px + this.pw / 2, this.py + this.ph / 2, 42, "red");
+          this.emitHud();
+          this.cb.onOver({
+            distance: Math.floor(this.distance), score: Math.floor(this.score),
+            shards: this.shards, shifts: this.shifts, time: this.time,
+          });
+        }
+        stepParticles(dt) {
+          for (const p of this.particles) { p.life -= dt; p.vy += p.grav * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
+          this.particles = this.particles.filter((p) => p.life > 0);
+        }
+        emitHud() {
+          this.cb.onHud({
+            world: this.world, distance: Math.floor(this.distance), score: Math.floor(this.score),
+            shards: this.shards, best: this.best, biome: biomeFor(this.distance).name,
+            shiftPulse: this.shiftPulse,
+          });
+        }
+        pal(world) {
+          const list = PALETTES[world || this.world];
+          return list[Math.min(biomeFor(this.distance).idx, list.length - 1)];
+        }
+        /* ------------------------------ render ---------------------------- */
+        render() {
+          const c = this.ctx, pal = this.pal();
+          c.save();
+          c.clearRect(0, 0, VIEW_W, VIEW_H);
+          const sk = c.createLinearGradient(0, 0, 0, VIEW_H);
+          sk.addColorStop(0, pal.sky0);
+          sk.addColorStop(1, pal.sky1);
+          c.fillStyle = sk;
+          c.fillRect(0, 0, VIEW_W, VIEW_H);
+
+          if (this.shakeT > 0 && this.opts.shake)
+            c.translate((Math.random() - 0.5) * 12 * this.shakeT, (Math.random() - 0.5) * 12 * this.shakeT);
+          if (this.world === "b") c.translate(Math.sin(this.animT * 40) * (0.6 + this.glitch * 3), 0);
+
+          this.drawBackground(c, pal);
+          c.save();
+          c.translate(-this.camX, 0);
+          if (this.opts.ghost) this.drawGhost(c);
+          this.drawSpikes(c);
+          this.drawPlatforms(c, pal);
+          this.drawFallers(c, pal);
+          this.drawHazards(c);
+          this.drawShards(c);
+          this.drawParticles(c);
+          if (!this.over) this.drawPlayer(c, pal);
+          c.restore();
+
+          this.drawGlitch(c, pal);
+
+          const vg = c.createRadialGradient(VIEW_W / 2, VIEW_H / 2, 180, VIEW_W / 2, VIEW_H / 2, 620);
+          vg.addColorStop(0, "rgba(0,0,0,0)");
+          vg.addColorStop(1, "rgba(0,0,0,0.55)");
+          c.fillStyle = vg;
+          c.fillRect(0, 0, VIEW_W, VIEW_H);
+
+          if (this.flash > 0) {
+            c.fillStyle = pal.particle + 0.4 * this.flash + ")";
+            c.fillRect(0, 0, VIEW_W, VIEW_H);
+          }
+          c.restore();
+        }
+        drawBackground(c, pal) {
+          const layers = [
+            { off: 0.15, col: pal.far, base: 470, amp: 90, step: 260 },
+            { off: 0.35, col: pal.mid, base: 500, amp: 120, step: 200 },
+            { off: 0.55, col: pal.near, base: 540, amp: 90, step: 150 },
+          ];
+          for (const L of layers) {
+            c.fillStyle = L.col;
+            c.beginPath();
+            c.moveTo(0, VIEW_H);
+            const shift = this.camX * L.off;
+            for (let x = -L.step; x <= VIEW_W + L.step; x += L.step) {
+              const wx = x - (shift % L.step);
+              const seed = Math.floor((x + shift) / L.step);
+              const h = L.base - (Math.abs(Math.sin(seed * 12.9898) * L.amp) + 20);
+              c.lineTo(wx, h);
+              c.lineTo(wx + L.step / 2, L.base);
+            }
+            c.lineTo(VIEW_W, VIEW_H);
+            c.closePath();
+            c.fill();
+          }
+          for (const d of this.bgDots) {
+            const span = VIEW_W + 160;
+            const x = ((((d.x - this.camX * (0.2 + d.s)) % span) + span) % span) - 80;
+            const y = d.y + Math.sin(this.animT * d.s * 2 + d.x) * 8;
+            c.globalAlpha = 0.22 + d.s;
+            c.fillStyle = pal.accent;
+            c.beginPath();
+            c.arc(x, y, d.r, 0, Math.PI * 2);
+            c.fill();
+          }
+          c.globalAlpha = 1;
+        }
+        visible(ch) { return !(ch.x + ch.w < this.camX - 150 || ch.x > this.camX + VIEW_W + 150); }
+        drawGhost(c) {
+          const other = this.world === "a" ? "b" : "a";
+          const pal = this.pal(other);
+          c.save();
+          c.globalAlpha = 0.16;
+          c.lineWidth = 2;
+          for (const ch of this.gen.chunks) {
+            if (!this.visible(ch)) continue;
+            const p = other === "a" ? ch.a : ch.b;
+            c.setLineDash([8, 8]);
+            c.strokeStyle = pal.platTop;
+            for (const r of p.platforms) c.strokeRect(r.x, r.y, r.w, Math.min(r.h, 24));
+            for (const r of p.movers) c.strokeRect(r.x, r.y, r.w, r.h);
+            c.setLineDash([3, 5]);
+            c.strokeStyle = "#ff6b8a";
+            for (const s of p.spikes) c.strokeRect(s.x, s.y, s.w, s.h);
+            for (const h of p.hazards) c.strokeRect(h.x, h.y, h.w, h.h);
+          }
+          c.restore();
+        }
+        platRect(c, pal, p) {
+          c.fillStyle = pal.plat;
+          this.roundRect(c, p.x, p.y, p.w, p.h, 6);
+          c.fill();
+          const g = c.createLinearGradient(0, p.y, 0, p.y + Math.min(p.h, 60));
+          g.addColorStop(0, "rgba(255,255,255,0.18)");
+          g.addColorStop(1, "rgba(0,0,0,0.25)");
+          c.fillStyle = g;
+          this.roundRect(c, p.x, p.y, p.w, p.h, 6);
+          c.fill();
+          c.fillStyle = pal.platTop;
+          c.shadowColor = pal.glow;
+          c.shadowBlur = 14;
+          c.fillRect(p.x, p.y, p.w, 4);
+          c.shadowBlur = 0;
+        }
+        drawPlatforms(c, pal) {
+          for (const ch of this.gen.chunks) {
+            if (!this.visible(ch)) continue;
+            const p = this.world === "a" ? ch.a : ch.b;
+            for (const r of p.platforms) this.platRect(c, pal, r);
+            for (const m of p.movers) {
+              this.platRect(c, pal, m);
+              c.globalAlpha = 0.5;
+              c.fillStyle = pal.accent;
+              c.fillRect(m.x + m.w / 2 - 12, m.y + 7, 24, 3);
+              c.globalAlpha = 1;
+            }
+          }
+        }
+        drawFallers(c, pal) {
+          for (const ch of this.gen.chunks) {
+            if (!this.visible(ch)) continue;
+            const p = this.world === "a" ? ch.a : ch.b;
+            for (const f of p.fallers) {
+              if (f.y > KILL_Y) continue;
+              c.save();
+              if (f.state === 1) c.translate(Math.sin(this.animT * 60) * 3, 0);
+              c.globalAlpha = f.state === 2 ? 0.55 : 1;
+              c.fillStyle = pal.plat;
+              this.roundRect(c, f.x, f.y, f.w, f.h, 5);
+              c.fill();
+              c.fillStyle = f.state === 0 ? pal.platTop : "#ffb36b";
+              c.fillRect(f.x, f.y, f.w, 3);
+              c.restore();
+            }
+          }
+        }
+        drawSpikes(c) {
+          for (const ch of this.gen.chunks) {
+            if (!this.visible(ch)) continue;
+            const p = this.world === "a" ? ch.a : ch.b;
+            for (const s of p.spikes) {
+              const n = Math.max(2, Math.round(s.w / 16)), step = s.w / n;
+              c.fillStyle = this.world === "a" ? "#ff5fa2" : "#ff8a4c";
+              c.shadowColor = c.fillStyle;
+              c.shadowBlur = 12;
+              for (let i = 0; i < n; i++) {
+                c.beginPath();
+                c.moveTo(s.x + i * step, s.y + s.h);
+                c.lineTo(s.x + i * step + step / 2, s.y - 8);
+                c.lineTo(s.x + (i + 1) * step, s.y + s.h);
+                c.closePath();
+                c.fill();
+              }
+              c.shadowBlur = 0;
+            }
+          }
+        }
+        drawHazards(c) {
+          for (const ch of this.gen.chunks) {
+            if (!this.visible(ch)) continue;
+            const p = this.world === "a" ? ch.a : ch.b;
+            for (const h of p.hazards) {
+              c.save();
+              c.translate(h.x + h.w / 2, h.y + h.h / 2);
+              c.rotate(this.animT * 3);
+              c.fillStyle = "#ff4d6d";
+              c.shadowColor = "#ff4d6d";
+              c.shadowBlur = 20;
+              c.beginPath();
+              for (let i = 0; i < 4; i++) {
+                const a = (i / 4) * Math.PI * 2;
+                c.lineTo(Math.cos(a) * 16, Math.sin(a) * 16);
+              }
+              c.closePath();
+              c.fill();
+              c.restore();
+            }
+          }
+        }
+        drawShards(c) {
+          for (const ch of this.gen.chunks) {
+            if (!this.visible(ch)) continue;
+            for (const s of ch.shards) {
+              if (s.got) continue;
+              const bob = Math.sin(this.animT * 2.4 + s.x) * 6;
+              c.save();
+              c.translate(s.x, s.y + bob);
+              c.rotate(this.animT * 1.4);
+              c.fillStyle = "#ffd97a";
+              c.shadowColor = "#ffb43d";
+              c.shadowBlur = 22;
+              c.beginPath();
+              c.moveTo(0, -12); c.lineTo(8, 0); c.lineTo(0, 12); c.lineTo(-8, 0);
+              c.closePath(); c.fill();
+              c.restore();
+            }
+          }
+        }
+        drawParticles(c) {
+          for (const p of this.particles) {
+            const a = Math.max(0, p.life / p.max);
+            c.fillStyle =
+              p.hue === "gold" ? "rgba(255,203,107," + a + ")"
+              : p.hue === "red" ? "rgba(255,90,110," + a + ")"
+              : PALETTES[p.hue][0].particle + a + ")";
+            c.beginPath();
+            c.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            c.fill();
+          }
+        }
+        drawGlitch(c, pal) {
+          const strength = (this.world === "b" ? 0.06 : 0) + this.glitch * 0.3;
+          if (strength <= 0.01) return;
+          c.save();
+          c.globalAlpha = strength;
+          c.fillStyle = pal.accent;
+          for (let i = 0; i < 6; i++) {
+            const y = (Math.sin(this.animT * (1.3 + i) + i * 2) * 0.5 + 0.5) * VIEW_H;
+            c.fillRect(0, y, VIEW_W, 2);
+          }
+          c.restore();
+        }
+        drawPlayer(c, pal) {
+          const sk = this.skin, x = this.px, y = this.py, w = this.pw, h = this.ph, t = this.animT;
+          let squash = 1, stretch = 1;
+          if (!this.onGround) {
+            const s = Math.max(-1, Math.min(1, this.vy / 700));
+            stretch = 1 + Math.abs(s) * 0.16;
+            squash = 1 - Math.abs(s) * 0.12;
+          } else {
+            squash = 1 + Math.sin(t * 20) * 0.05;
+            stretch = 1 - Math.sin(t * 20) * 0.05;
+          }
+          if (sk.effect === "trail" || sk.effect === "chrono") {
+            for (const tr of this.trail) {
+              c.globalAlpha = (tr.life / 0.32) * 0.28;
+              c.fillStyle = sk.glow;
+              this.roundRect(c, tr.x - w / 2, tr.y - h / 2, w, h, 8);
+              c.fill();
+            }
+            c.globalAlpha = 1;
+          }
+          c.save();
+          c.translate(x + w / 2, y + h);
+          if (sk.effect === "void") {
+            c.globalAlpha = 0.35;
+            c.fillStyle = "#000";
+            c.beginPath();
+            c.arc(0, -h / 2, 30 + Math.sin(t * 3) * 3, 0, Math.PI * 2);
+            c.fill();
+            c.globalAlpha = 1;
+          }
+          const bw = w * squash, bh = h * stretch;
+          const glow = sk.effect === "prism" ? "hsl(" + ((t * 140) % 360) + " 90% 70%)" : sk.glow;
+          if (sk.effect === "glitch") {
+            c.globalAlpha = 0.5;
+            c.fillStyle = sk.trim;
+            this.roundRect(c, -bw / 2 + Math.sin(t * 33) * 3, -bh, bw, bh, 8);
+            c.fill();
+            c.fillStyle = glow;
+            this.roundRect(c, -bw / 2 - Math.sin(t * 33) * 3, -bh, bw, bh, 8);
+            c.fill();
+            c.globalAlpha = 1;
+          }
+          c.shadowColor = glow;
+          c.shadowBlur = 24 + this.shiftPulse * 28;
+          c.fillStyle = sk.body;
+          this.roundRect(c, -bw / 2, -bh, bw, bh, 8);
+          c.fill();
+          c.shadowBlur = 0;
+          c.fillStyle = sk.trim;
+          this.roundRect(c, -bw / 2 + 4, -bh + 6, bw - 8, 9, 4);
+          c.fill();
+          c.fillStyle = glow;
+          c.fillRect(bw / 2 - 10, -bh + 8, 5, 5);
+          if (this.onGround) {
+            const p1 = Math.sin(t * 20) * 6;
+            c.fillRect(-7, -6, 5, 6 + p1);
+            c.fillRect(3, -6, 5, 6 - p1);
+          } else {
+            c.fillRect(-7, -8, 5, 8);
+            c.fillRect(3, -6, 5, 6);
+          }
+          if (sk.effect === "sparkle" && Math.random() < 0.4) {
+            c.globalAlpha = 0.8;
+            c.fillStyle = "#fff";
+            c.beginPath();
+            c.arc((Math.random() - 0.5) * 30, -Math.random() * h - 4, 1.6, 0, Math.PI * 2);
+            c.fill();
+            c.globalAlpha = 1;
+          }
+          if (this.shiftPulse > 0) {
+            c.globalAlpha = this.shiftPulse * 0.6;
+            c.strokeStyle = pal.accent;
+            c.lineWidth = 3;
+            c.beginPath();
+            c.arc(0, -bh / 2, 20 + (1 - this.shiftPulse) * 46, 0, Math.PI * 2);
+            c.stroke();
+          }
+          c.restore();
+        }
+        roundRect(c, x, y, w, h, r) {
+          const rr = Math.min(r, w / 2, h / 2);
+          c.beginPath();
+          c.moveTo(x + rr, y);
+          c.arcTo(x + w, y, x + w, y + h, rr);
+          c.arcTo(x + w, y + h, x, y + h, rr);
+          c.arcTo(x, y + h, x, y, rr);
+          c.arcTo(x, y, x + w, y, rr);
+          c.closePath();
+        }
+      }
+
+      /* --------------------------------- UI ------------------------------- */
+      const $ = (s) => document.querySelector(s);
+      const num = (n) => Math.floor(n).toLocaleString("en-US");
+      const fmtTime = (s) => {
+        const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+        return String(m).padStart(2, "0") + ":" + String(sec).padStart(2, "0");
+      };
+      const SCREENS = ["menu", "skins", "best", "settings", "pause", "over"];
+      let screen = "menu";
+      let lastMilestoneMark = 0;
+
+      function show(name) {
+        screen = name;
+        for (const s of SCREENS) $("#scr-" + s).classList.toggle("hidden", s !== name);
+        $("#hud").classList.toggle("hidden", !(name === "playing" || name === "pause" || name === "over"));
+        $("#foot").textContent =
+          name === "playing" || name === "pause" || name === "over"
+            ? "SPACE JUMP · E SWITCH WORLD · R RESTART · ESC PAUSE"
+            : "AN ENDLESS TWO-WORLD RUNNER";
+        if (name === "skins") renderSkins();
+        if (name === "best") renderBest();
+      }
+
+      const game = new Game($("#cv"), {
+        onHud: (h) => {
+          $("#dist").textContent = num(h.distance) + " M";
+          $("#score").textContent = num(h.score);
+          $("#runShards").textContent = "◆ " + h.shards;
+          $("#bestMini").textContent = "BEST " + num(h.best) + " M";
+          $("#biome").textContent = h.biome;
+          const isA = h.world === "a";
+          const pill = $("#pill");
+          $("#worldTxt").textContent = isA ? "WORLD A" : "WORLD B";
+          const col = isA ? "var(--world-a)" : "var(--world-b)";
+          pill.style.color = col;
+          pill.style.borderColor = col;
+          pill.style.boxShadow = "0 0 " + (10 + h.shiftPulse * 28) + "px " + col;
+          pill.style.transform = "scale(" + (1 + h.shiftPulse * 0.09) + ")";
+          const marks = [1000, 2500, 5000, 10000];
+          for (const m of marks) {
+            if (h.distance >= m && lastMilestoneMark < m) {
+              lastMilestoneMark = m;
+              celebrate(num(m) + " METERS");
+            }
+          }
+        },
+        onEvent: (text, kind) => toast(text, kind),
+        onOver: (r) => finishRun(r),
+      });
+      window.__sb = game;
+
+      function toast(text, kind) {
+        const box = $("#toasts");
+        const el = document.createElement("div");
+        el.className = "toast" + (kind === "shard" ? " gold" : "");
+        el.textContent = text;
+        box.appendChild(el);
+        if (box.children.length > 3) box.removeChild(box.firstChild);
+        setTimeout(() => el.remove(), 1200);
+      }
+      function celebrate(text) {
+        sfx.unlock();
+        $("#milestoneTxt").textContent = text;
+        $("#milestone").classList.remove("hidden");
+        setTimeout(() => $("#milestone").classList.add("hidden"), 1800);
+      }
+      function shakeStage() {
+        const st = $("#stage");
+        st.classList.remove("shake");
+        void st.offsetWidth;
+        if (game.opts.shake) st.classList.add("shake");
+      }
+
+      function startRun() {
+        lastMilestoneMark = 0;
+        $("#toasts").innerHTML = "";
+        $("#milestone").classList.add("hidden");
+        game.stop();
+        game.reset();
+        show("playing");
+        game.start();
+      }
+
+      function finishRun(r) {
+        shakeStage();
+        const prevBest = save.bestDistance;
+        save.bestDistance = Math.max(save.bestDistance, r.distance);
+        save.bestScore = Math.max(save.bestScore, r.score);
+        save.totalShards += r.shards;
+        save.totalDistance += r.distance;
+        save.totalShifts += r.shifts;
+        save.longestTime = Math.max(save.longestTime, r.time);
+        save.runs += 1;
+        const newSkins = [];
+        for (const s of SKINS)
+          if (save.unlocked.indexOf(s.id) === -1 && meets(s, save)) { save.unlocked.push(s.id); newSkins.push(s); }
+        const newMs = [];
+        for (const m of MILESTONES)
+          if (save.milestones.indexOf(m.id) === -1 && m.check(save)) { save.milestones.push(m.id); newMs.push(m); }
+        persist();
+
+        $("#recordBadge").classList.toggle("hidden", !(r.distance > prevBest && r.distance > 0));
+        $("#overRows").innerHTML = [
+          ["DISTANCE", num(r.distance) + " M"],
+          ["SCORE", num(r.score)],
+          ["BEST DISTANCE", num(save.bestDistance) + " M"],
+          ["SHARDS COLLECTED", String(r.shards)],
+        ].map((kv) => '<div class="row"><span class="k">' + kv[0] + "</span><span>" + kv[1] + "</span></div>").join("");
+
+        const box = $("#unlockBox");
+        box.classList.toggle("hidden", newSkins.length === 0);
+        box.innerHTML = newSkins.length
+          ? '<div class="lbl" style="text-align:center;letter-spacing:.4em">SKIN UNLOCKED</div>' +
+            newSkins.map((s) => '<div style="display:flex;align-items:center;gap:12px;margin-top:10px">' + previewHTML(s, 44) + '<span class="skin-name" style="color:var(--action-soft)">' + s.name + "</span></div>").join("")
+          : "";
+        $("#overMs").innerHTML = newMs
+          .map((m) => '<div style="font-size:9px;letter-spacing:.3em;color:var(--shard);margin-top:4px">✔ ' + m.label + "</div>")
+          .join("");
+        if (newSkins.length || newMs.length) sfx.unlock();
+        setTimeout(() => show("over"), 650);
+      }
+
+      function previewHTML(s, size) {
+        return (
+          '<div class="prev" style="width:' + size + "px;height:" + size + "px;flex:0 0 " + size + "px;background:radial-gradient(circle at 50% 60%, " + s.glow + '33, transparent 70%)">' +
+          '<div class="body" style="background:' + s.body + ";box-shadow:0 0 " + size * 0.3 + "px " + s.glow + '">' +
+          '<div class="visor" style="background:' + s.trim + '"></div>' +
+          '<div class="eye" style="background:' + s.glow + '"></div>' +
+          "</div></div>"
+        );
+      }
+
+      function renderSkins() {
+        $("#skinCount").textContent = save.unlocked.length + "/" + SKINS.length + " UNLOCKED";
+        const grid = $("#skinGrid");
+        grid.innerHTML = "";
+        for (const s of SKINS) {
+          const unlocked = save.unlocked.indexOf(s.id) !== -1 || meets(s, save);
+          const equipped = save.equipped === s.id;
+          const el = document.createElement("div");
+          el.className = "skin" + (equipped ? " equipped" : "");
+          el.innerHTML =
+            '<div class="skin-head">' +
+            '<div class="' + (unlocked ? "" : "locked ") + 'prevwrap">' + previewHTML(s, 62).replace('class="prev"', 'class="prev' + (unlocked ? "" : " locked") + '"') + "</div>" +
+            '<div style="min-width:0;flex:1">' +
+            '<div class="skin-name">' + (unlocked ? s.name : "LOCKED") + "</div>" +
+            '<div class="skin-sub">' + (unlocked ? s.tagline : s.req.label) + "</div>" +
+            (unlocked ? "" : '<div class="bar"><i style="width:' + Math.round(progress(s, save) * 100) + '%"></i></div>') +
+            "</div></div>" +
+            '<button class="ghost" style="margin-top:14px;font-size:10px" ' + (!unlocked || equipped ? "disabled" : "") + ">" +
+            (equipped ? "EQUIPPED" : unlocked ? "EQUIP" : "LOCKED") +
+            "</button>";
+          const btn = el.querySelector("button");
+          btn.addEventListener("click", () => {
+            save.equipped = s.id;
+            persist();
+            sfx.unlock();
+            renderSkins();
+            const card = $("#skinGrid").children[SKINS.indexOf(s)];
+            if (card) { card.classList.add("equip-anim"); setTimeout(() => card.classList.remove("equip-anim"), 320); }
+          });
+          grid.appendChild(el);
+        }
+      }
+
+      function renderBest() {
+        $("#bestRows").innerHTML = [
+          ["BEST DISTANCE", num(save.bestDistance) + " M"],
+          ["BEST SCORE", num(save.bestScore)],
+          ["LONGEST SURVIVAL", fmtTime(save.longestTime)],
+          ["TOTAL SHARDS", num(save.totalShards)],
+          ["TOTAL DISTANCE", num(save.totalDistance) + " M"],
+          ["WORLD SHIFTS", num(save.totalShifts)],
+          ["RUNS", num(save.runs)],
+        ].map((kv) => '<div class="row"><span class="k">' + kv[0] + "</span><span>" + kv[1] + "</span></div>").join("");
+        $("#msGrid").innerHTML = MILESTONES.map((m) => {
+          const done = save.milestones.indexOf(m.id) !== -1;
+          return '<div class="ms' + (done ? " done" : "") + '">' + (done ? "✔ " : "◻ ") + m.label + "</div>";
+        }).join("");
+      }
+
+      /* ------------------------------ wiring ------------------------------ */
+      document.addEventListener("click", (e) => {
+        const t = e.target.closest("[data-go],[data-toggle],[data-reset]");
+        if (!t) return;
+        sfx.ui();
+        if (t.hasAttribute("data-reset")) {
+          if (confirm("Reset all progress?")) {
+            save = Object.assign({}, DEFAULT_SAVE, { unlocked: ["original"], milestones: [] });
+            persist();
+            renderBest();
+          }
+          return;
+        }
+        const tog = t.getAttribute("data-toggle");
+        if (tog) {
+          if (tog === "sound") { audioOn = !audioOn; $("#tSound").textContent = audioOn ? "ON" : "OFF"; }
+          else {
+            game.opts[tog] = !game.opts[tog];
+            $("#t" + tog.charAt(0).toUpperCase() + tog.slice(1)).textContent = game.opts[tog] ? "ON" : "OFF";
+          }
+          return;
+        }
+        const go = t.getAttribute("data-go");
+        if (go === "play") startRun();
+        else if (go === "resume") { show("playing"); game.start(); }
+        else if (go === "menu") { game.stop(); show("menu"); }
+        else show(go);
+      });
+
+      const GAME_KEYS = ["KeyA","KeyD","KeyW","KeyS","KeyE","KeyR","Space","ArrowLeft","ArrowRight","ArrowUp","ArrowDown","ShiftLeft","ShiftRight"];
+      window.addEventListener("keydown", (e) => {
+        if (GAME_KEYS.indexOf(e.code) !== -1) e.preventDefault();
+        if (e.code === "Escape") {
+          if (screen === "playing") { game.stop(); show("pause"); }
+          else if (screen === "pause") { show("playing"); game.start(); }
+          return;
+        }
+        if (e.code === "Enter" && (screen === "menu" || screen === "over")) return startRun();
+        if (e.code === "KeyR" && (screen === "playing" || screen === "over")) return startRun();
+        if (screen !== "playing") return;
+        game.key(e.code, true);
+      });
+      window.addEventListener("keyup", (e) => game.key(e.code, false));
+      window.addEventListener("blur", () => { if (screen === "playing") { game.stop(); show("pause"); } });
+
+      // idle attract frame so the menu sits on a live-looking world
+      game.render();
+      show("menu");
+    </script>
+  </body>
+</html>
